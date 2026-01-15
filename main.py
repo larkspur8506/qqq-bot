@@ -75,9 +75,11 @@ async def run_bot():
                     # e.g. 14:02 -> next is 14:05. Sleep 3 mins.
                     # e.g. 14:05:01 -> next is 14:10. Sleep 4m 59s.
                     next_run_min = (now.minute // config.SCAN_INTERVAL_MIN + 1) * config.SCAN_INTERVAL_MIN
-                    next_run = now.replace(minute=0, second=0, microsecond=0) + asyncio.timedelta(minutes=next_run_min)
+                    # Fix: Use timedelta from datetime, not asyncio
+                    from datetime import timedelta 
+                    next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=next_run_min)
                     if next_run_min >= 60: # Handle hour rollover roughly
-                        next_run = now.replace(minute=0, second=0, microsecond=0) + asyncio.timedelta(hours=1)
+                        next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                         
                     sleep_seconds = (next_run - now).total_seconds()
                     # Ensure positive sleep
