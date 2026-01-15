@@ -33,16 +33,15 @@ class Strategy:
             await self.ib.qualifyContractsAsync(self.qqq_contract)
             
             # Fetch 1 day of historical data to get yesterday's close
-
-        # This is robust to mid-day restarts
-        bars = await self.ib.reqHistoricalDataAsync(
-            self.qqq_contract, 
-            endDateTime='', 
-            durationStr='1 D', 
-            barSizeSetting='1 day', 
-            whatToShow='TRADES', 
-            useRTH=True
-        )
+            # This is robust to mid-day restarts
+            bars = await self.ib.reqHistoricalDataAsync(
+                self.qqq_contract, 
+                endDateTime='', 
+                durationStr='1 D', 
+                barSizeSetting='1 day', 
+                whatToShow='TRADES', 
+                useRTH=True
+            )
         
         if bars:
             # The returned bar is "today" if market is open/closed, or yesterday?
@@ -76,9 +75,13 @@ class Strategy:
                  if not found_prev:
                      # This implies both bars are today? Unlikely. 
                      # Fallback: Just take the first bar's close if it's the only one available and check date
-                     logger.warning("[Strategy] Could not definitively identify previous day bar. Using first available close.")
-                     self.prev_close = bars_2d[0].close
+                         logger.warning("[Strategy] Could not definitively identify previous day bar. Using first available close.")
+                         self.prev_close = bars_2d[0].close
         
+        except Exception as e:
+            logger.error(f"[Strategy] Error during initialization: {e}")
+            return False
+
         if self.prev_close is None:
             logger.error("[Strategy] CRITICAL: Could not fetch PrevClose. Bot cannot trade safely.")
             return False
