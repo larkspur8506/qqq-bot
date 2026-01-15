@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   qqq-bot:
-    build: .
+    # build: .  <-- Local build (commented out)
+    image: ghcr.io/larkspur8506/qqq-bot:latest
     container_name: qqq-leaps-bot
     environment:
       - IB_HOST=ibkr-gateway

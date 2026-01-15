@@ -11,13 +11,20 @@
     *   网络: `qqq_default`
 
 ### 2. 运行 (Running)
-在项目根目录下执行以下命令：
+在项目根目录下 (确保有 `docker-compose.yml`) 执行：
 
 ```bash
-docker-compose up --build -d
+# 1. (首次) 登录 GitHub Container Registry
+# 使用你的 GitHub 用户名和 Personal Access Token (PAT)
+echo <Your-PAT> | docker login ghcr.io -u larkspur8506 --password-stdin
+
+# 2. 拉取最新镜像
+docker-compose pull
+
+# 3. 启动
+docker-compose up -d
 ```
-*   这会自动构建镜像并启动容器。
-*   Bot 会自动连接到同一网络下的 `ibkr-gateway:4004`。
+*   Bot 会自动从 GitHub 拉取最新镜像并连接到 `ibkr-gateway:4004`。
 
 ### 3. 查看日志 (Logs)
 ```bash
