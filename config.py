@@ -43,3 +43,7 @@ TIME_EXIT_DAYS = 270        # Sell if held >= 270 days (Force Exit)
 MAX_SPREAD_RATIO = 0.01     # (Ask - Bid) / Mid <= 1%
 MAX_PREMIUM = 12000.0       # Max $ per contract
 ORDER_TIMEOUT = 30          # Seconds to wait for order fill before check
+
+# --- Persistence ---
+# Allows overriding the path via environment variable (e.g., for Docker volume mapping)
+TRADES_CSV_PATH = os.getenv('TRADES_CSV_PATH', 'trades.csv')

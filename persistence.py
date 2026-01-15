@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 import config
 
-CSV_FILE = 'trades.csv'
+CSV_FILE = config.TRADES_CSV_PATH
 HEADERS = [
     'ContractID', 'Symbol', 'EntryDate', 'EntryPrice', 'Quantity', 
     'ExitSignal', 'ExitDate', 'ExitPrice', 'PnL', 'Status'
