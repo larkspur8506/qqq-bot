@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  qqq-bot:
+    build: .
+    container_name: qqq-leaps-bot
+    environment:
+      - IB_HOST=ibkr-gateway
+      - IB_PORT=4004
+      - CLIENT_ID=2
+    volumes:
+      - ./trades.csv:/app/trades.csv
+    networks:
+      - qqq_default
+    restart: unless-stopped
+
+networks:
+  qqq_default:
+    external: true
