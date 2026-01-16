@@ -157,24 +157,33 @@ class Strategy:
             "Currency": "USD"
         }
         
-        # Log available tags for debugging if needed
-        # logger.debug(f"[Stats] Available Account Tags: {[v.tag for v in acc_values]}")
+        # DEBUG: Print all available tags once to find the correct NetLiq tag
+        all_tags = [f"{v.tag}({v.currency})={v.value}" for v in acc_values]
+        logger.info(f"[DEBUG] All Account Tags: {all_tags}")
 
         for v in acc_values:
-            # IB sometimes provides total values under 'BASE' currency entry
-            # or simply as standalone tags.
-            if v.tag == 'NetLiquidity' and (v.currency == 'BASE' or v.currency == 'USD'): 
-                summary['NetLiquidity'] = float(v.value)
-            if v.tag == 'TotalCashValue' and (v.currency == 'BASE' or v.currency == 'USD'): 
-                summary['TotalCashValue'] = float(v.value)
-            if v.tag == 'BuyingPower': 
-                summary['BuyingPower'] = float(v.value)
+            # Check for multiple variations of Net Liquidity tags
+            if v.tag in ['NetLiquidity', 'NetLiquidation', 'EquityWithLoanValue', 'NetLiquidationByCurrency']:
+                try:
+                    val = float(v.value)
+                    # Prefer BASE or USD, but take anything if currently 0
+                    if val != 0 and (v.currency in ['BASE', 'USD'] or summary['NetLiquidity'] == 0):
+                        summary['NetLiquidity'] = val
+                except: pass
             
-            # Fallback for NetLiquidity if still 0 and we see NetLiquidity (generic)
-            if summary['NetLiquidity'] == 0 and v.tag == 'NetLiquidity':
-                summary['NetLiquidity'] = float(v.value)
+            if v.tag in ['TotalCashValue', 'CashBalance', 'TotalCashBalance']:
+                try:
+                    val = float(v.value)
+                    if val != 0 and (v.currency in ['BASE', 'USD'] or summary['TotalCashValue'] == 0):
+                        summary['TotalCashValue'] = val
+                except: pass
 
-        logger.info(f"[Stats] Account Summary: NetLiq={summary['NetLiquidity']}, Cash={summary['TotalCashValue']}")
+            if v.tag == 'BuyingPower': 
+                try:
+                    summary['BuyingPower'] = float(v.value)
+                except: pass
+
+        logger.info(f"[Stats] Account Summary: NetLiq={summary['NetLiquidity']}, Cash={summary['TotalCashValue']}, BP={summary['BuyingPower']}")
         # 2. Positions
         positions = self.ib.positions()
         holdings = []
