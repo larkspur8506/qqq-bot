@@ -36,6 +36,10 @@ async def run_bot():
                         timeout=10
                     )
                     logger.info("Connected.")
+                    try:
+                        ib.reqMarketDataType(3)  # Ensure Delayed Data is used (fixes Error 10089 on reconnect)
+                    except Exception as e:
+                        logger.error(f"Failed to set market data type: {e}")
                 except Exception as e:
                     logger.error(f"Connection failed: {e}. Retrying in {config.RECONNECT_DELAY}s...")
                     await asyncio.sleep(config.RECONNECT_DELAY)

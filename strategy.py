@@ -98,6 +98,8 @@ class Strategy:
                 return
 
         # 1. Update Market Price
+        # Ensure Delayed Data (3) is active (in case find_leaps changed it to Frozen/4)
+        self.ib.reqMarketDataType(3) 
         ticker = self.ib.reqMktData(self.qqq_contract, '', True, False)
         while ticker.last != ticker.last: # Nan check
             await asyncio.sleep(0.1)
