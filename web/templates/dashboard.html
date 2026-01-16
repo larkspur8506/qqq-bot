@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-LEAPS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fix for 'def' keyword in JS code above lol -->
+    <script>
+        // Overwriting the previous script block essentially because I wrote 'def' instead of 'function' in python-brain mode.
+        // Let's fix it properly here.
+    </script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <!-- FIX SCRIPT -->
+    <script>
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+
+                const connDot = document.getElementById('conn-dot');
+                const connText = document.getElementById('conn-text');
+                if (data.connected) {
+                    connDot.classList.remove('bg-red-500');
+                    connDot.classList.add('bg-green-500');
+                    connText.innerText = 'Connected';
+                } else {
+                    connDot.classList.remove('bg-green-500');
+                    connDot.classList.add('bg-red-500');
+                    connText.innerText = 'Disconnected';
+                }
+
+                const tbody = document.getElementById('pos-body');
+                tbody.innerHTML = '';
+                if (!data.positions || data.positions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No active positions</td></tr>';
+                } else {
+                    data.positions.forEach(pos => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-gray-700 hover:bg-gray-800 transition";
+                        tr.innerHTML = `
+                            <td class="p-3 font-bold">${pos.symbol}</td>
+                            <td class="p-3 font-mono text-sm">${pos.contract_id}</td>
+                            <td class="p-3 text-gray-400 text-sm">${pos.entry_date}</td>
+                            <td class="p-3">$${pos.entry_price.toFixed(2)}</td>
+                            <td class="p-3">${pos.quantity}</td>
+                            <td class="p-3 font-mono">--</td> 
+                            <td class="p-3"><span class="bg-green-900 text-green-200 px-2 py-1 rounded text-xs font-bold">OPEN</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                // Fill Settings if empty (On first load only, to avoid locking inputs)
+                const sForm = document.forms['settings-form'];
+                if (data.settings && !sForm.dataset.filled) {
+                    if (sForm.entry_drop_pct) sForm.entry_drop_pct.value = data.settings.entry_drop_pct;
+                    if (sForm.target_delta) sForm.target_delta.value = data.settings.target_delta;
+                    if (sForm.min_expiry_days) sForm.min_expiry_days.value = data.settings.min_expiry_days;
+                    if (sForm.max_positions) sForm.max_positions.value = data.settings.max_positions;
+                    if (sForm.time_exit_days) sForm.time_exit_days.value = data.settings.time_exit_days;
+                    sForm.dataset.filled = "true";
+                }
+
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            const data = Object.fromEntries(form.entries());
+
+            if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct);
+            if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
+            if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
+            if (data.max_positions) data.max_positions = parseInt(data.max_positions);
+            if (data.time_exit_days) data.time_exit_days = parseInt(data.time_exit_days);
+
+            const btn = document.getElementById('save-btn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...';
+
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                btn.innerText = 'Saved!';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            } else {
+                btn.innerText = 'Error';
+            }
+        }
+    </script>
+
+    <!-- Top Bar -->
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                QQQ LEAPS MASTERY
+            </h1>
+            <div class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">
+                <div id="conn-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
+                <span id="conn-text" class="text-xs text-gray-300 font-mono">Disconnected</span>
+            </div>
+        </div>
+        <div>
+            <form action="/logout" method="POST">
+                <button class="text-xs text-gray-500 hover:text-white transition">Sign Out</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left Col: Positions -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                    <h2 class="font-bold text-lg">Active Positions</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
+                            <tr>
+                                <th class="p-3">Sym</th>
+                                <th class="p-3">ConID</th>
+                                <th class="p-3">Entry Date</th>
+                                <th class="p-3">Price</th>
+                                <th class="p-3">Qty</th>
+                                <th class="p-3">Live PnL</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pos-body" class="text-sm">
+                            <!-- JS Injection -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Col: Settings -->
+        <div class="space-y-6">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">Strategy Config</h2>
+                <form id="settings-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Entry Drop %</label>
+                        <input name="entry_drop_pct" type="number" step="0.001"
+                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
+                        <p class="text-xs text-gray-500 mt-1">Triggers scan (e.g., -0.01 for -1%)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Target Delta</label>
+                        <input name="target_delta" type="number" step="0.01"
+                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Min Expiry
+                                (Days)</label>
+                            <input name="min_expiry_days" type="number"
+                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Max Pos</label>
+                            <input name="max_positions" type="number"
+                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Max Hold (Days)</label>
+                        <input name="time_exit_days" type="number"
+                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                        <p class="text-xs text-gray-500 mt-1">Force exit (Shield)</p>
+                    </div>
+
+                    <button id="save-btn" type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
+                        Update Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

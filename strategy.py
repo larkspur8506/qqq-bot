@@ -9,12 +9,18 @@ import execution
 
 logger = logging.getLogger(__name__)
 
+from persistence import Database
+
 class Strategy:
-    def __init__(self, ib: IB):
+    def __init__(self, ib: IB, database: Database):
         self.ib = ib
+        self.db = database
         self.qqq_contract = Stock(config.SYMBOL, 'SMART', 'USD')
         self.prev_close = None
         self.last_day_check = None 
+        
+        # Cache settings
+        self.settings = {} 
 
     async def initialize(self):
         """
@@ -92,6 +98,14 @@ class Strategy:
         """
         The main logic executed every 5 minutes.
         """
+        # Reload Settings from DB
+        self.settings['entry_drop_pct'] = await self.db.get_setting('entry_drop_pct', -0.01)
+        self.settings['target_delta'] = await self.db.get_setting('target_delta', 0.6)
+        self.settings['min_expiry_days'] = await self.db.get_setting('min_expiry_days', 365)
+        self.settings['max_positions'] = await self.db.get_setting('max_positions', 3)
+        self.settings['time_exit_days'] = await self.db.get_setting('time_exit_days', 270)
+        self.settings['delta_tolerance'] = await self.db.get_setting('delta_tolerance', 0.1)
+
         if self.prev_close is None:
             await self.initialize() # Retry init if failed previously
             if self.prev_close is None: 
@@ -114,8 +128,9 @@ class Strategy:
         await self.manage_positions(current_price)
 
         # 3. Check Signal (The Spear)
-        if pct_change <= config.ENTRY_DROP_PCT:
-            logger.info(f"[Signal] DROP DETECTED: {pct_change:.2%} <= {config.ENTRY_DROP_PCT:.2%}")
+        entry_drop_trigger = self.settings['entry_drop_pct']
+        if pct_change <= entry_drop_trigger:
+            logger.info(f"[Signal] DROP DETECTED: {pct_change:.2%} <= {entry_drop_trigger:.2%}")
             await self.process_entry_signal()
         else:
             logger.info("[Signal] No entry signal.")
@@ -124,26 +139,34 @@ class Strategy:
         """
         Checks TP and Time Exit for all open positions.
         """
-        open_positions = persistence.load_open_positions()
+        open_positions = await self.db.get_open_positions()
         if not open_positions:
             return
 
         logger.info(f"[Manager] Checking {len(open_positions)} open positions...")
         
         now = datetime.now(config.TIMEZONE)
+        
+        # Load Exit Tiers from DB
+        tiers = await self.db.get_exit_tiers()
 
         for pos in open_positions:
-            contract_id = int(pos['ContractID'])
-            entry_price = float(pos['EntryPrice'])
-            entry_date_str = pos['EntryDate'] 
-            # Parse entry date - handle T separator if present
+            contract_id = int(pos['contract_id'])
+            entry_price = float(pos['entry_price'])
+            # Ensure proper datetime parsing from SQLite (ISO format usually)
+            entry_date_str = pos['entry_date']
             try:
-                entry_dt = datetime.fromisoformat(entry_date_str)
-                # Ensure timezone aware
+                # SQLite might store as "YYYY-MM-DD HH:MM:SS.ssssss" or similar
+                # We need to ensure we can parse it.
+                if isinstance(entry_date_str, datetime):
+                     entry_dt = entry_date_str
+                else:
+                     entry_dt = datetime.fromisoformat(str(entry_date_str))
+                
                 if entry_dt.tzinfo is None:
                     entry_dt = config.TIMEZONE.localize(entry_dt)
-            except ValueError:
-                logger.error(f"Invalid date format in CSV: {entry_date_str}")
+            except Exception as e:
+                logger.error(f"Invalid date format in DB: {entry_date_str} - {e}")
                 continue
 
             # Reconstitute Contract
@@ -160,34 +183,31 @@ class Strategy:
             # Calc PnL
             pnl_pct = (mid_price - entry_price) / entry_price
             
-            # Determine TP Target based on Days Held
+            # Determine TP Target based on Days Held using DB Tiers
             days_held = (now - entry_dt).days
-            target_pnl = 0.50 # Default high
+            target_pnl = 9.99 # Logic should prevent exit if no tier matches
             
-            # 0-4 months (0-120 days): 50%
-            # 4-6 months (121-180 days): 30%
-            # 7-9 months (181-270 days): 10%
-            if days_held <= 120:
-                target_pnl = 0.50
-            elif days_held <= 180:
-                target_pnl = 0.30
-            elif days_held < config.TIME_EXIT_DAYS:
-                target_pnl = 0.10
+            # Find matching tier
+            for tier in tiers:
+                if tier['days_min'] <= days_held <= tier['days_max']:
+                    target_pnl = tier['target_pnl']
+                    break
             
             # CHECK 1: Take Profit (Dynamic)
             if pnl_pct >= target_pnl:
                 logger.info(f"[Exit] Stepped TP Triggered for {contract.localSymbol}: {pnl_pct:.2%} >= {target_pnl:.2%} (Held {days_held}d)")
-                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['Quantity']), mid_price)
+                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price)
                 if trade and trade.orderStatus.status == 'Filled':
-                     persistence.update_trade_exit(contract_id, f'TP_Tier_{days_held}d', now, trade.orderStatus.avgFillPrice, (trade.orderStatus.avgFillPrice - entry_price)*100)
+                     await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, f'TP_Tier_{days_held}d')
                 return 
 
             # CHECK 2: Time Exit (Shield - Force Exit)
-            if days_held >= config.TIME_EXIT_DAYS:
-                logger.warning(f"[Exit] TIME LIMIT Triggered for {contract.localSymbol}: {days_held} days >= {config.TIME_EXIT_DAYS}")
-                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['Quantity']), mid_price)
+            time_exit_days = self.settings['time_exit_days']
+            if days_held >= time_exit_days:
+                logger.warning(f"[Exit] TIME LIMIT Triggered for {contract.localSymbol}: {days_held} days >= {time_exit_days}")
+                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price)
                 if trade and trade.orderStatus.status == 'Filled':
-                     persistence.update_trade_exit(contract_id, 'TimeLimit', now, trade.orderStatus.avgFillPrice, (trade.orderStatus.avgFillPrice - entry_price)*100)
+                     await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'TimeLimit')
                 return
 
     async def process_entry_signal(self):
@@ -199,13 +219,14 @@ class Strategy:
         4. Execute.
         """
         # Global Checks
-        if persistence.has_traded_today(config.SYMBOL, config.TIMEZONE):
+        if await self.db.has_traded_today(config.SYMBOL, config.TIMEZONE):
             logger.info("[Entry] Skipped: Already traded today (One Trade Per Day Rule).")
             return
 
-        open_positions = persistence.load_open_positions()
-        if len(open_positions) >= config.MAX_POSITIONS:
-            logger.info(f"[Entry] Skipped: Max positions reached ({len(open_positions)}/{config.MAX_POSITIONS}).")
+        open_positions = await self.db.get_open_positions()
+        max_positions = self.settings['max_positions']
+        if len(open_positions) >= max_positions:
+            logger.info(f"[Entry] Skipped: Max positions reached ({len(open_positions)}/{max_positions}).")
             return
 
         # Find Contract
@@ -225,7 +246,13 @@ class Strategy:
                  # execution.place_limit_order waits for fill or cancel.
                  if trade.orderStatus.status == 'Filled':
                      now = datetime.now(config.TIMEZONE)
-                     persistence.save_trade(contract.conId, config.SYMBOL, now, trade.orderStatus.avgFillPrice, 1)
+                     await self.db.save_trade({
+                        'contract_id': contract.conId, 
+                        'symbol': config.SYMBOL, 
+                        'entry_date': now, 
+                        'entry_price': trade.orderStatus.avgFillPrice, 
+                        'quantity': 1
+                     })
                      logger.info(f"[Entry] SUCCESS. Saved to DB.")
                  else:
                      logger.warning("[Entry] Order not filled.")
@@ -249,11 +276,12 @@ class Strategy:
 
         # Filter Expirations > 365 days
         now = datetime.now()
+        min_expiry = self.settings['min_expiry_days']
         valid_expirations = []
         for exp in chain.expirations:
             # exp format YYYYMMDD
             d = datetime.strptime(exp, '%Y%m%d')
-            if (d - now).days >= config.MIN_EXPIRY_DAYS:
+            if (d - now).days >= min_expiry:
                 valid_expirations.append(exp)
         
         if not valid_expirations:
@@ -304,6 +332,9 @@ class Strategy:
         best_contract = None
         min_delta_diff = 999
         
+        target_delta = self.settings['target_delta']
+        delta_tolerance = self.settings['delta_tolerance']
+
         for contract in candidates:
              # Requesting tick data with GenericTickList '100' (Option Volume), '101' (Open Interest), '106' (Implied Vol)
              # But 'delta' comes with regular market data if possible or reqGreeks
@@ -320,9 +351,9 @@ class Strategy:
             t = self.ib.ticker(contract)
             if t and t.modelGreeks and t.modelGreeks.delta:
                 delta = t.modelGreeks.delta
-                diff = abs(delta - config.TARGET_DELTA)
+                diff = abs(delta - target_delta)
                 # Ensure it's positive delta for Call (it should be)
-                if diff < min_delta_diff and diff <= config.DELTA_TOLERANCE:
+                if diff < min_delta_diff and diff <= delta_tolerance:
                      min_delta_diff = diff
                      best_contract = contract
                      logger.info(f"[Scanner] Found Candidate: {contract.localSymbol} (Delta={delta:.3f})")

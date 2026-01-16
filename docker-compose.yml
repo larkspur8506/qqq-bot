@@ -5,16 +5,23 @@ services:
     # build: .  <-- Local build (commented out)
     image: ghcr.io/larkspur8506/qqq-bot:latest
     container_name: qqq-leaps-bot
+    ports:
+      - "8000:8000"
     environment:
       - IB_HOST=ibkr-gateway
       - IB_PORT=4004
       - CLIENT_ID=2
+      - DB_PATH=/data/bot.db
     volumes:
-      - ./trades.csv:/app/trades.csv
+      - qqq-bot:/data
     networks:
       - qqq_default
     restart: unless-stopped
 
 networks:
   qqq_default:
+    external: true
+
+volumes:
+  qqq-bot:
     external: true

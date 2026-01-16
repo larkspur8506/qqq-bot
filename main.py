@@ -19,10 +19,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Main")
 
-async def run_bot():
-    ib = IB()
-    strategy = Strategy(ib)
-    
+import uvicorn
+from persistence import Database
+import web.server
+
+async def start_web_server():
+    """Starts the FastAPI Web Server"""
+    config = uvicorn.Config("web.server:app", host="0.0.0.0", port=8000, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+async def run_bot_logic(ib, strategy):
+    """The original infinite loop for trading logic"""
     # Connection Loop
     while True:
         try:
@@ -58,35 +66,26 @@ async def run_bot():
                     
                     if init_failures >= 3:
                         logger.error("ALARM: Initialization failed 3 times. Pausing for 15 minutes to avoid API spam.")
-                        # Disconnect during pause? Or just sleep. Sleep is safer to keep loop simple.
-                        # IB connection might timeout if idle, but loop handles that.
                         await asyncio.sleep(15 * 60) 
-                        init_failures = 0 # Reset after long pause
+                        init_failures = 0 
                     else:
-                        await asyncio.sleep(5) # Short retry delay
+                        await asyncio.sleep(5) 
 
             # Main Strategy Loop
-            # We want to run every 5 minutes
             logger.info("Starting Main Strategy Cycle...")
             while ib.isConnected():
                 try:
                     await strategy.run_cycle()
                     
                     # Wait for next 5-min mark
-                    # Current minute
                     now = datetime.now()
-                    # Calculate minutes to next 5-min interval
-                    # e.g. 14:02 -> next is 14:05. Sleep 3 mins.
-                    # e.g. 14:05:01 -> next is 14:10. Sleep 4m 59s.
                     next_run_min = (now.minute // config.SCAN_INTERVAL_MIN + 1) * config.SCAN_INTERVAL_MIN
-                    # Fix: Use timedelta from datetime, not asyncio
                     from datetime import timedelta 
                     next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(minutes=next_run_min)
-                    if next_run_min >= 60: # Handle hour rollover roughly
+                    if next_run_min >= 60: 
                         next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
                         
                     sleep_seconds = (next_run - now).total_seconds()
-                    # Ensure positive sleep
                     if sleep_seconds < 1: sleep_seconds = 60 
                     
                     logger.info(f"Cycle Complete. Sleeping {sleep_seconds:.1f}s until {next_run.strftime('%H:%M:%S')}...")
@@ -94,14 +93,32 @@ async def run_bot():
                     
                 except Exception as cycle_error:
                     logger.error(f"Error in Run Cycle: {cycle_error}")
-                    await asyncio.sleep(60) # Error backoff
+                    await asyncio.sleep(60) 
 
         except Exception as e:
             logger.error(f"Global Error: {e}")
             await asyncio.sleep(config.RECONNECT_DELAY)
 
+async def main():
+    # 1. Initialize Database
+    db = Database()
+    await db.initialize()
+    
+    # 2. Initialize Bot Components
+    ib = IB()
+    strategy = Strategy(ib, db)
+    
+    # 3. Inject into Web Server
+    web.server.set_dependencies(ib, db, strategy)
+    
+    # 4. Run Concurrently
+    await asyncio.gather(
+        run_bot_logic(ib, strategy),
+        start_web_server()
+    )
+
 if __name__ == '__main__':
     try:
-        asyncio.run(run_bot())
+        asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user.")

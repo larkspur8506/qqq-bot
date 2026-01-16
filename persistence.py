@@ -1,127 +1,214 @@
-
-import csv
+import aiosqlite
+import logging
 import os
 from datetime import datetime
-import config
+import pytz
+import asyncio
 
-CSV_FILE = config.TRADES_CSV_PATH
-HEADERS = [
-    'ContractID', 'Symbol', 'EntryDate', 'EntryPrice', 'Quantity', 
-    'ExitSignal', 'ExitDate', 'ExitPrice', 'PnL', 'Status'
-]
+logger = logging.getLogger(__name__)
 
-def init_db():
-    """Initialize the CSV file with headers if it doesn't exist."""
-    if not os.path.exists(CSV_FILE):
-        with open(CSV_FILE, mode='w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=HEADERS)
-            writer.writeheader()
-        print(f"[Persistence] Created new {CSV_FILE}")
-    else:
-        print(f"[Persistence] Found existing {CSV_FILE}")
+# Default DB Path (can be overridden by Env Var for Docker volumes)
+DB_PATH = os.getenv('DB_PATH', 'bot.db')
 
-def save_trade(contract_id, symbol, entry_date, entry_price, quantity):
-    """Log a new trade entry."""
-    # Ensure entry_date is string format if passed as datetime
-    if isinstance(entry_date, datetime):
-        entry_date = entry_date.isoformat()
+class Database:
+    def __init__(self, db_path=DB_PATH):
+        self.db_path = db_path
 
-    row = {
-        'ContractID': contract_id,
-        'Symbol': symbol,
-        'EntryDate': entry_date,
-        'EntryPrice': f"{entry_price:.2f}",
-        'Quantity': quantity,
-        'ExitSignal': '',
-        'ExitDate': '',
-        'ExitPrice': '0.0',
-        'PnL': '0.0',
-        'Status': 'OPEN'
-    }
-    
-    with open(CSV_FILE, mode='a', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=HEADERS)
-        writer.writerow(row)
-    print(f"[Persistence] Saved NEW trade: {symbol} (ID: {contract_id})")
+    async def initialize(self):
+        """Creates tables if they don't exist and seeds default data."""
+        logger.info(f"[DB] Initializing database at {self.db_path}...")
+        async with aiosqlite.connect(self.db_path) as db:
+            # 1. Admin Users (Auth)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS admin_users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
 
-def load_open_positions():
-    """
-    Returns a list of dictionaries for all trades with Status='OPEN'.
-    Used for state recovery on restart.
-    """
-    if not os.path.exists(CSV_FILE):
-        return []
+            # 2. System Settings (Dynamic Config)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS system_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT,
+                    type TEXT -- 'int', 'float', 'str'
+                )
+            """)
 
-    open_positions = []
-    with open(CSV_FILE, mode='r', newline='') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row['Status'] == 'OPEN':
-                open_positions.append(row)
-    return open_positions
+            # 3. Exit Tiers (Stepped TP)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS exit_tiers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    days_min INTEGER,
+                    days_max INTEGER,
+                    target_pnl FLOAT
+                )
+            """)
 
-def update_trade_exit(contract_id, exit_signal, exit_date, exit_price, pnl):
-    """
-    Updates an existing OPEN trade to CLOSED.
-    Since CSV doesn't support direct update, we rewrite the file.
-    This is acceptable for low-volume trading (max 3 positions).
-    """
-    if isinstance(exit_date, datetime):
-        exit_date = exit_date.isoformat()
+            # 4. Trades (History)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS trades (
+                    contract_id INTEGER PRIMARY KEY,
+                    symbol TEXT,
+                    entry_date TIMESTAMP,
+                    entry_price FLOAT,
+                    quantity INTEGER,
+                    exit_date TIMESTAMP,
+                    exit_price FLOAT,
+                    pnl_raw FLOAT,
+                    exit_reason TEXT,
+                    status TEXT -- 'OPEN', 'CLOSED'
+                )
+            """)
+            
+            await db.commit()
+            await self._seed_defaults(db)
 
-    rows = []
-    updated = False
-    
-    # Read all rows
-    if os.path.exists(CSV_FILE):
-        with open(CSV_FILE, mode='r', newline='') as f:
-            reader = csv.DictReader(f)
-            rows = list(reader)
+    async def _seed_defaults(self, db):
+        """Seeds default settings if they don't exist."""
+        defaults = {
+            'target_delta': ('0.6', 'float'),
+            'entry_drop_pct': ('-0.01', 'float'),
+            'min_expiry_days': ('365', 'int'),
+            'max_positions': ('3', 'int'),
+            'time_exit_days': ('270', 'int'),
+            'ib_port': ('4004', 'int') # Default port, can be changed via UI
+        }
 
-    # Modify the target row
-    for row in rows:
-        if row['ContractID'] == str(contract_id) and row['Status'] == 'OPEN':
-            row['ExitSignal'] = exit_signal
-            row['ExitDate'] = exit_date
-            row['ExitPrice'] = f"{exit_price:.2f}"
-            row['PnL'] = f"{pnl:.2f}"
-            row['Status'] = 'CLOSED'
-            updated = True
-            print(f"[Persistence] Updated trade EXIT: {contract_id} via {exit_signal}")
-            break
-    
-    if updated:
-        with open(CSV_FILE, mode='w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=HEADERS)
-            writer.writeheader()
-            writer.writerows(rows)
-    else:
-        print(f"[Persistence] WARNING: Could not find OPEN trade for ID {contract_id} to update.")
-
-def has_traded_today(symbol, timezone_obj):
-    """
-    Checks if a trade was already entered today for the given symbol.
-    Prevents multiple buys strictly based on Calendar Date (US/Eastern).
-    """
-    if not os.path.exists(CSV_FILE):
-        return False
+        for key, (val, link_type) in defaults.items():
+            await db.execute(
+                "INSERT OR IGNORE INTO system_settings (key, value, type) VALUES (?, ?, ?)",
+                (key, val, link_type)
+            )
         
-    today_str = datetime.now(timezone_obj).date().isoformat()
-    
-    with open(CSV_FILE, mode='r', newline='') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            # EntryDate format: YYYY-MM-DDTHH:MM:SS or similar
-            # We compare the substring YYYY-MM-DD
-            if row['Symbol'] == symbol and row['EntryDate'].startswith(today_str):
-                return True
-    return False
+        # Seed Exit Tiers if empty
+        cursor = await db.execute("SELECT COUNT(*) FROM exit_tiers")
+        count = (await cursor.fetchone())[0]
+        if count == 0:
+            logger.info("[DB] Seeding default Exit Tiers...")
+            tiers = [
+                (0, 120, 0.50),
+                (121, 180, 0.30),
+                (181, 9999, 0.10) 
+            ]
+            await db.executemany(
+                "INSERT INTO exit_tiers (days_min, days_max, target_pnl) VALUES (?, ?, ?)",
+                tiers
+            )
+        
+        await db.commit()
 
-if __name__ == '__main__':
-    # Simple test if run directly
-    init_db()
-    # Test Entry
-    # save_trade(12345, 'QQQ_TEST', datetime.now(), 10.50, 1)
-    # print("Open:", load_open_positions())
-    # Test Exit
-    # update_trade_exit(12345, 'TP', datetime.now(), 15.75, 525.0)
+    # --- Core API ---
+
+    async def get_setting(self, key, default=None):
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT value, type FROM system_settings WHERE key = ?", (key,)) as cursor:
+                row = await cursor.fetchone()
+                if not row: return default
+                
+                val, type_str = row
+                if type_str == 'int': return int(val)
+                if type_str == 'float': return float(val)
+                return val
+
+    async def set_setting(self, key, value, type_str='str'):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "INSERT OR REPLACE INTO system_settings (key, value, type) VALUES (?, ?, ?)",
+                (key, str(value), type_str)
+            )
+            await db.commit()
+
+    async def get_exit_tiers(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT * FROM exit_tiers ORDER BY days_min ASC") as cursor:
+                return [dict(row) for row in await cursor.fetchall()]
+
+    async def get_open_positions(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT * FROM trades WHERE status = 'OPEN'") as cursor:
+                 return [dict(row) for row in await cursor.fetchall()]
+
+    async def save_trade(self, trade_data):
+        """
+        trade_data: dict with contract_id, symbol, entry_date, entry_price, quantity
+        """
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
+                INSERT OR REPLACE INTO trades 
+                (contract_id, symbol, entry_date, entry_price, quantity, status)
+                VALUES (?, ?, ?, ?, ?, 'OPEN')
+            """, (
+                trade_data['contract_id'], 
+                trade_data['symbol'], 
+                trade_data['entry_date'], 
+                trade_data['entry_price'], 
+                trade_data['quantity']
+            ))
+            await db.commit()
+
+    async def close_trade(self, contract_id, exit_date, exit_price, reason):
+        async with aiosqlite.connect(self.db_path) as db:
+            # First get entry price to calc PnL
+            async with db.execute("SELECT entry_price, quantity FROM trades WHERE contract_id = ?", (contract_id,)) as cursor:
+                row = await cursor.fetchone()
+                if not row: 
+                    logger.error(f"Cannot close trade {contract_id}: Not found.")
+                    return
+                entry_price, quantity = row
+                
+                pnl_raw = (exit_price - entry_price) * quantity * 100 # Option multiplier usually 100
+
+                await db.execute("""
+                    UPDATE trades 
+                    SET exit_date = ?, exit_price = ?, pnl_raw = ?, exit_reason = ?, status = 'CLOSED'
+                    WHERE contract_id = ?
+                """, (exit_date, exit_price, pnl_raw, reason, contract_id))
+                await db.commit()
+
+    async def has_traded_today(self, symbol, timezone):
+        now = datetime.now(timezone)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Convert to naive or ISO if needed, depending on how we store dates.
+        # SQLite stores timestamps as strings usually. We should ensure consistency.
+        # Here we assume timestamps are stored as ISO strings.
+        
+        # NOTE: This implementation relies on string comparison of ISO dates which works for YYYY-MM-DD
+        today_iso = today_start.isoformat()
+        
+        async with aiosqlite.connect(self.db_path) as db:
+             async with db.execute(
+                 "SELECT COUNT(*) FROM trades WHERE symbol = ? AND entry_date >= ?", 
+                 (symbol, today_iso)
+             ) as cursor:
+                 count = (await cursor.fetchone())[0]
+                 return count > 0
+
+    # --- Auth & First Run ---
+    
+    async def get_admin_count(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT COUNT(*) FROM admin_users") as cursor:
+                return (await cursor.fetchone())[0]
+
+    async def create_admin(self, username, password_hash):
+        async with aiosqlite.connect(self.db_path) as db:
+            try:
+                await db.execute(
+                    "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)", 
+                    (username, password_hash)
+                )
+                await db.commit()
+                return True
+            except aiosqlite.IntegrityError:
+                return False
+
+    async def get_admin_password(self, username):
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT password_hash FROM admin_users WHERE username = ?", (username,)) as cursor:
+                row = await cursor.fetchone()
+                return row[0] if row else None
