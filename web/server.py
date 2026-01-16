@@ -16,7 +16,11 @@ app = FastAPI(title="QQQ LEAPS Bot Dashboard")
 # Absolute paths are safer in Docker/execution contexts
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+
+# Mount static files only if directory exists (we use Tailwind CDN anyway)
+static_dir = os.path.join(BASE_DIR, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Shared State (Injected from main.py)
 bot_ib = None
