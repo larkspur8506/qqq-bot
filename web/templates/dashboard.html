@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q-LEAPS 控制台</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .card {
+            background-color: rgba(31, 41, 55, 1);
+            border: 1px solid rgba(55, 65, 81, 1);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
 
     <script>
         let currentMaxHoldDays = 270;
@@ -80,9 +94,9 @@
                 // Fill Account Summary
                 if (data.portfolio && data.portfolio.summary) {
                     const sum = data.portfolio.summary;
-                    document.getElementById('acc-liq').innerText = '$' + sum.NetLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                    document.getElementById('acc-cash').innerText = '$' + sum.TotalCashValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                    document.getElementById('acc-bp').innerText = '$' + sum.BuyingPower.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    document.getElementById('net-liq').innerText = '$' + sum.NetLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    document.getElementById('cash-balance').innerText = '$' + sum.TotalCashValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    document.getElementById('buying-power').innerText = '$' + sum.BuyingPower.toLocaleString(undefined, { minimumFractionDigits: 2 });
                 }
 
                 // Portfolio Table
@@ -360,23 +374,23 @@
 
     <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Dashboard Summary Row (Top) -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
             <div class="card p-4">
-                <div class="text-xs uppercase text-gray-400 font-bold mb-1">资产净值 (Net Liq)</div>
-                <div id="net-liq" class="text-2xl font-bold text-blue-400">$0.00</div>
+                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">资产净值 (NET LIQ)</div>
+                <div id="net-liq" class="text-xl font-bold text-blue-400">$0.00</div>
             </div>
             <div class="card p-4">
-                <div class="text-xs uppercase text-gray-400 font-bold mb-1">可用现金 (Cash)</div>
-                <div id="cash-balance" class="text-2xl font-bold text-green-400">$0.00</div>
+                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">可用现金 (CASH)</div>
+                <div id="cash-balance" class="text-xl font-bold text-green-400">$0.00</div>
             </div>
             <div class="card p-4">
-                <div class="text-xs uppercase text-gray-400 font-bold mb-1">期权累计净利 (Profit Pool)</div>
-                <div id="profit-pool" class="text-2xl font-bold text-purple-400">$0.00</div>
-                <div id="invested-info" class="text-[10px] text-gray-500">已投 QQQM: $0.00</div>
+                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">期权累计净利 (PROFIT POOL)</div>
+                <div id="profit-pool" class="text-xl font-bold text-purple-400">$0.00</div>
+                <div id="invested-info" class="text-[10px] text-gray-500 truncate">已投: $0.00 / 总利: $0.00</div>
             </div>
             <div class="card p-4">
-                <div class="text-xs uppercase text-gray-400 font-bold font-bold mb-1">购买力 (Buying Power)</div>
-                <div id="buying-power" class="text-2xl font-bold text-pink-400">$0.00</div>
+                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">购买力 (BUYING POWER)</div>
+                <div id="buying-power" class="text-xl font-bold text-pink-400">$0.00</div>
             </div>
         </div>
 
