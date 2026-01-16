@@ -159,12 +159,25 @@ class Strategy:
             "BuyingPower": 0.0,
             "Currency": "USD"
         }
-        for v in acc_values:
-            if v.tag == 'NetLiquidity': summary['NetLiquidity'] = float(v.value)
-            if v.tag == 'TotalCashValue': summary['TotalCashValue'] = float(v.value)
-            if v.tag == 'BuyingPower': summary['BuyingPower'] = float(v.value)
-            if v.tag == 'Currency': summary['Currency'] = v.value
+        
+        # Log available tags for debugging if needed
+        # logger.debug(f"[Stats] Available Account Tags: {[v.tag for v in acc_values]}")
 
+        for v in acc_values:
+            # IB sometimes provides total values under 'BASE' currency entry
+            # or simply as standalone tags.
+            if v.tag == 'NetLiquidity' and (v.currency == 'BASE' or v.currency == 'USD'): 
+                summary['NetLiquidity'] = float(v.value)
+            if v.tag == 'TotalCashValue' and (v.currency == 'BASE' or v.currency == 'USD'): 
+                summary['TotalCashValue'] = float(v.value)
+            if v.tag == 'BuyingPower': 
+                summary['BuyingPower'] = float(v.value)
+            
+            # Fallback for NetLiquidity if still 0 and we see NetLiquidity (generic)
+            if summary['NetLiquidity'] == 0 and v.tag == 'NetLiquidity':
+                summary['NetLiquidity'] = float(v.value)
+
+        logger.info(f"[Stats] Account Summary: NetLiq={summary['NetLiquidity']}, Cash={summary['TotalCashValue']}")
         # 2. Positions
         positions = self.ib.positions()
         holdings = []
