@@ -158,6 +158,7 @@ class Strategy:
         }
         
         cashes_to_show = []
+        seen_currencies = set()
 
         for v in acc_values:
             # Check for multiple variations of Net Liquidity tags
@@ -175,8 +176,9 @@ class Strategy:
                     if val != 0 and (v.currency in ['BASE', 'USD'] or summary['TotalCashValue'] == 0):
                         summary['TotalCashValue'] = val
                     
-                    # Also collect individual currency balances for the holdings table
-                    if v.currency != 'BASE' and val != 0:
+                    # Also collect individual currency balances for the holdings table (deduplicated)
+                    if v.currency != 'BASE' and val != 0 and v.currency not in seen_currencies:
+                        seen_currencies.add(v.currency)
                         cashes_to_show.append({
                             "conId": 0,
                             "symbol": f"CASH ({v.currency})",
