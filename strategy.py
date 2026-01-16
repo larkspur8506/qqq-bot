@@ -97,7 +97,10 @@ class Strategy:
         self.settings['time_exit_days'] = await self.db.get_setting('time_exit_days', 270)
         self.settings['delta_tolerance'] = await self.db.get_setting('delta_tolerance', 0.1)
         self.settings['roll_drop_pct'] = await self.db.get_setting('roll_drop_pct', -0.05)
-
+        self.settings['leaps_realized_profit'] = await self.db.get_setting('leaps_realized_profit', 0.0)
+        self.settings['qqqm_invested_capital'] = await self.db.get_setting('qqqm_invested_capital', 0.0)
+        self.settings['auto_invest_qqqm'] = await self.db.get_setting('auto_invest_qqqm', 0)
+        self.settings['auto_invest_min_threshold'] = await self.db.get_setting('auto_invest_min_threshold', 500.0)
     async def run_cycle(self):
         """
         The main logic executed every 5 minutes.
@@ -277,9 +280,15 @@ class Strategy:
                  await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'ROLL_EXIT')
                  logger.info(f"[ROLL] SELL SUCCESS for {contract.localSymbol}")
                  
+                 # Record Profit
+                 await self.record_realized_profit(contract_id, float(oldest_pos['entry_price']), trade.orderStatus.avgFillPrice, int(oldest_pos['quantity']), trade.fills)
+                 
                  # 2. Buy Replacement
                  # We trigger a normal entry search which will pick current best LEAP (lower strike now)
                  await self.process_entry_signal()
+                 
+                 # Check for QQQM Auto-Invest
+                 await self.check_and_invest_profits()
             else:
                  logger.warning("[ROLL] Sell order failed to fill. Aborting roll.")
         else:
@@ -349,6 +358,8 @@ class Strategy:
                 trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price)
                 if trade and trade.orderStatus.status == 'Filled':
                      await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, f'TP_Tier_{days_held}d')
+                     await self.record_realized_profit(contract_id, entry_price, trade.orderStatus.avgFillPrice, int(pos['quantity']), trade.fills)
+                     await self.check_and_invest_profits()
                 return 
 
             # CHECK 2: Time Exit (Shield - Force Exit)
@@ -358,6 +369,8 @@ class Strategy:
                 trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price)
                 if trade and trade.orderStatus.status == 'Filled':
                      await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'TimeLimit')
+                     await self.record_realized_profit(contract_id, entry_price, trade.orderStatus.avgFillPrice, int(pos['quantity']), trade.fills)
+                     await self.check_and_invest_profits()
                 return
 
     async def process_entry_signal(self):
@@ -515,3 +528,69 @@ class Strategy:
 
         return best_contract
 
+    async def record_realized_profit(self, contract_id, entry_price, exit_price, quantity, fills):
+        """
+        Calculates net profit (considering commissions) and updates DB.
+        """
+        commission = 0.0
+        for f in fills:
+            if f.commissionReport:
+                commission += f.commissionReport.commission
+        
+        # Profit = (Exit - Entry) * Qty * 100 - Commission
+        net_profit = (exit_price - entry_price) * quantity * 100 - commission
+        
+        current_total = await self.db.get_setting('leaps_realized_profit', 0.0)
+        new_total = float(current_total) + net_profit
+        await self.db.set_setting('leaps_realized_profit', str(new_total))
+        self.settings['leaps_realized_profit'] = new_total
+        
+        logger.info(f"[Profit] Recorded Net Profit: ${net_profit:.2f}. New Total: ${new_total:.2f} (Commission: ${commission:.2f})")
+
+    async def check_and_invest_profits(self):
+        """
+        Automatically invests accumulated profits into QQQM stock.
+        """
+        enabled = await self.db.get_setting('auto_invest_qqqm', 0)
+        if not int(enabled):
+            return
+
+        total_profit = await self.db.get_setting('leaps_realized_profit', 0.0)
+        invested = await self.db.get_setting('qqqm_invested_capital', 0.0)
+        min_threshold = await self.db.get_setting('auto_invest_min_threshold', 500.0)
+        
+        available = float(total_profit) - float(invested)
+        
+        if available < float(min_threshold):
+            logger.info(f"[AutoInvest] Available profit ${available:.2f} is below threshold ${min_threshold:.2f}")
+            return
+
+        # 1. Qualify QQQM
+        qqqm = Stock('QQQM', 'SMART', 'USD')
+        await self.ib.qualifyContractsAsync(qqqm)
+        
+        # 2. Get Price
+        price, _ = await execution.get_mid_price(self.ib, qqqm)
+        if not price or price <= 0:
+            logger.warning("[AutoInvest] Could not get price for QQQM")
+            return
+
+        # 3. Calculate Quantity
+        shares = int(available // price)
+        if shares <= 0:
+            logger.info(f"[AutoInvest] Not enough profit (${available:.2f}) for 1 share of QQQM (${price:.2f})")
+            return
+
+        # 4. Execute Buy
+        logger.info(f"[AutoInvest] Investing ${available:.2f} into {shares} shares of QQQM @ ${price:.2f}")
+        trade = await execution.place_limit_order(self.ib, qqqm, 'BUY', shares, price)
+        
+        if trade and trade.orderStatus.status == 'Filled':
+            actual_cost = trade.orderStatus.avgFillPrice * shares
+            # We don't subtract commissions from 'invested' bucket, we just track capital deployed
+            new_invested = float(invested) + actual_cost
+            await self.db.set_setting('qqqm_invested_capital', str(new_invested))
+            self.settings['qqqm_invested_capital'] = new_invested
+            logger.info(f"[AutoInvest] SUCCESS: {shares} QQQM bought. Total Invested: ${new_invested:.2f}")
+        else:
+            logger.warning("[AutoInvest] Buy order failed or cancelled.")

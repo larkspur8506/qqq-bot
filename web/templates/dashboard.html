@@ -61,6 +61,22 @@
                     bf.dataset.filled = "true";
                 }
 
+                // Fill Profit Settings
+                if (data.settings && data.settings.auto_invest_min_threshold !== undefined && !document.forms['profit-form'].dataset.filled) {
+                    const pf = document.forms['profit-form'];
+                    pf.auto_invest_qqqm.value = data.settings.auto_invest_qqqm;
+                    pf.auto_invest_min_threshold.value = data.settings.auto_invest_min_threshold;
+                    pf.dataset.filled = "true";
+                }
+
+                if (data.stats) {
+                    const profit = data.stats.leaps_realized_profit || 0;
+                    const invested = data.stats.qqqm_invested_capital || 0;
+                    const available = profit - invested;
+                    document.getElementById('profit-pool').innerText = `$${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('invested-info').innerText = `已投 QQQM: $${invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 总利润: $${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                }
+
                 // Fill Account Summary
                 if (data.portfolio && data.portfolio.summary) {
                     const sum = data.portfolio.summary;
@@ -289,8 +305,32 @@
         window.onload = function () {
             fetchStatus();
             fetchExitTiers();
-            document.getElementById('buy-form').addEventListener('submit', saveBuySettings);
-            document.getElementById('sell-form').addEventListener('submit', saveSellSettings);
+            async function saveProfitSettings(e) {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const settings = {
+                    auto_invest_qqqm: parseInt(formData.get('auto_invest_qqqm')),
+                    auto_invest_min_threshold: parseFloat(formData.get('auto_invest_min_threshold'))
+                };
+
+                try {
+                    const res = await fetch('/api/settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(settings)
+                    });
+                    if (res.ok) {
+                        showToast('利润循环设置已更新');
+                        fetchStatus();
+                    }
+                } catch (err) {
+                    showToast('保存失败', 'error');
+                }
+            }
+
+            document.getElementById('buy-form').onsubmit = saveBuySettings;
+            document.getElementById('sell-form').onsubmit = saveSellSettings;
+            document.getElementById('profit-form').onsubmit = saveProfitSettings;
 
             // Re-sync tiers display if manual input changes
             document.forms['sell-form'].time_exit_days.addEventListener('input', (e) => {
@@ -320,18 +360,23 @@
 
     <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Dashboard Summary Row (Top) -->
-        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <p class="text-xs text-gray-400 uppercase">净资产 (Net Liq)</p>
-                <h3 id="acc-liq" class="text-2xl font-bold font-mono text-blue-400">$0.00</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="card p-4">
+                <div class="text-xs uppercase text-gray-400 font-bold mb-1">资产净值 (Net Liq)</div>
+                <div id="net-liq" class="text-2xl font-bold text-blue-400">$0.00</div>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <p class="text-xs text-gray-400 uppercase">可用现金 (Cash)</p>
-                <h3 id="acc-cash" class="text-2xl font-bold font-mono text-green-400">$0.00</h3>
+            <div class="card p-4">
+                <div class="text-xs uppercase text-gray-400 font-bold mb-1">可用现金 (Cash)</div>
+                <div id="cash-balance" class="text-2xl font-bold text-green-400">$0.00</div>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <p class="text-xs text-gray-400 uppercase">购买力 (Buying Power)</p>
-                <h3 id="acc-bp" class="text-2xl font-bold font-mono text-purple-400">$0.00</h3>
+            <div class="card p-4">
+                <div class="text-xs uppercase text-gray-400 font-bold mb-1">期权累计净利 (Profit Pool)</div>
+                <div id="profit-pool" class="text-2xl font-bold text-purple-400">$0.00</div>
+                <div id="invested-info" class="text-[10px] text-gray-500">已投 QQQM: $0.00</div>
+            </div>
+            <div class="card p-4">
+                <div class="text-xs uppercase text-gray-400 font-bold font-bold mb-1">购买力 (Buying Power)</div>
+                <div id="buying-power" class="text-2xl font-bold text-pink-400">$0.00</div>
             </div>
         </div>
 
@@ -464,6 +509,34 @@
                         保存止盈梯度
                     </button>
                 </div>
+            </div>
+
+            <!-- Profit Recycling Settings -->
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2 flex items-center">
+                    <span class="mr-2">🔄</span> 利润循环设置
+                </h2>
+                <form id="profit-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">自动定投 QQQM</label>
+                        <select name="auto_invest_qqqm"
+                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
+                            <option value="0">关闭</option>
+                            <option value="1">开启</option>
+                        </select>
+                        <p class="text-[10px] text-gray-500 mt-1">开启后，期权平仓利润将自动买入 QQQM 现货。</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">起投阈值 ($)</label>
+                        <input name="auto_invest_min_threshold" type="number" step="10" placeholder="500"
+                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
+                        <p class="text-[10px] text-gray-500 mt-1">当利润余额超过此金额时触发买入。</p>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 rounded transition text-sm">
+                        更新利润设置
+                    </button>
+                </form>
             </div>
         </div>
     </div>

@@ -75,7 +75,11 @@ class Database:
             'max_positions': ('3', 'int'),
             'time_exit_days': ('270', 'int'),
             'roll_drop_pct': ('-0.05', 'float'),
-            'ib_port': ('4004', 'int') # Default port, can be changed via UI
+            'ib_port': ('4004', 'int'), # Default port, can be changed via UI
+            'leaps_realized_profit': ('0.0', 'float'),
+            'qqqm_invested_capital': ('0.0', 'float'),
+            'auto_invest_qqqm': ('0', 'int'),         # 0=off, 1=on
+            'auto_invest_min_threshold': ('500', 'float') # Min profit to trigger buy
         }
 
         for key, (val, link_type) in defaults.items():

@@ -181,8 +181,12 @@ async def api_status():
     return {
         "connected": connected,
         "positions": positions,
-        "settings": settings,
         "portfolio": portfolio,
+        "settings": settings,
+        "stats": {
+            "leaps_realized_profit": settings.get('leaps_realized_profit', 0.0),
+            "qqqm_invested_capital": settings.get('qqqm_invested_capital', 0.0)
+        },
         "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
