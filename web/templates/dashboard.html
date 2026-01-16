@@ -48,10 +48,12 @@
                     });
                 }
 
+
                 // Fill Buy Settings
                 if (data.settings && !document.forms['buy-form'].dataset.filled) {
                     const bf = document.forms['buy-form'];
-                    if (bf.entry_drop_pct) bf.entry_drop_pct.value = data.settings.entry_drop_pct;
+                    // Convert decimal to percentage for display: -0.01 → -1
+                    if (bf.entry_drop_pct) bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
                     if (bf.target_delta) bf.target_delta.value = data.settings.target_delta;
                     if (bf.min_expiry_days) bf.min_expiry_days.value = data.settings.min_expiry_days;
                     if (bf.max_positions) bf.max_positions.value = data.settings.max_positions;
@@ -95,7 +97,8 @@
             const form = new FormData(e.target);
             const data = Object.fromEntries(form.entries());
 
-            if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct);
+            // Convert percentage to decimal: -1 → -0.01
+            if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct) / 100;
             if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
             if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
@@ -212,9 +215,9 @@
                 <form id="buy-form" class="space-y-4">
                     <div>
                         <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">入场跌幅 (%)</label>
-                        <input name="entry_drop_pct" type="number" step="0.001"
+                        <input name="entry_drop_pct" type="number" step="0.1"
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
-                        <p class="text-xs text-gray-500 mt-1">例如：-0.01 代表 -1%</p>
+                        <p class="text-xs text-gray-500 mt-1">例如：-1 代表 -1%，-2.5 代表 -2.5%</p>
                     </div>
 
                     <div>
