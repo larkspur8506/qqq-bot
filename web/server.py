@@ -173,10 +173,16 @@ async def api_status():
     if bot_strategy:
         settings = bot_strategy.settings
 
+    # New: Portfolio Data
+    portfolio = None
+    if bot_strategy:
+        portfolio = await bot_strategy.get_all_holdings()
+
     return {
         "connected": connected,
         "positions": positions,
         "settings": settings,
+        "portfolio": portfolio,
         "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 

@@ -105,6 +105,7 @@ class Strategy:
         self.settings['max_positions'] = await self.db.get_setting('max_positions', 3)
         self.settings['time_exit_days'] = await self.db.get_setting('time_exit_days', 270)
         self.settings['delta_tolerance'] = await self.db.get_setting('delta_tolerance', 0.1)
+        self.settings['roll_drop_pct'] = await self.db.get_setting('roll_drop_pct', -0.05)
 
         if self.prev_close is None:
             await self.initialize() # Retry init if failed previously
@@ -129,11 +130,129 @@ class Strategy:
 
         # 3. Check Signal (The Spear)
         entry_drop_trigger = self.settings['entry_drop_pct']
-        if pct_change <= entry_drop_trigger:
+        roll_drop_trigger = self.settings['roll_drop_pct']
+        
+        open_positions = await self.db.get_open_positions()
+        max_positions = self.settings['max_positions']
+
+        if pct_change <= roll_drop_trigger and len(open_positions) >= max_positions:
+            logger.info(f"[ROLL] TRIGGERED: {pct_change:.2%} <= {roll_drop_trigger:.2%} and at MAX positions.")
+            await self.process_roll_signal()
+        elif pct_change <= entry_drop_trigger:
             logger.info(f"[Signal] DROP DETECTED: {pct_change:.2%} <= {entry_drop_trigger:.2%}")
             await self.process_entry_signal()
         else:
             logger.info("[Signal] No entry signal.")
+
+    async def get_all_holdings(self):
+        """
+        Fetches all current positions from IBKR and categorizes them.
+        """
+        if not self.ib.isConnected():
+            return None
+
+        # 1. Account Summary (Cash, NetLiquidity)
+        acc_values = self.ib.accountValues()
+        summary = {
+            "NetLiquidity": 0.0,
+            "TotalCashValue": 0.0,
+            "BuyingPower": 0.0,
+            "Currency": "USD"
+        }
+        for v in acc_values:
+            if v.tag == 'NetLiquidity': summary['NetLiquidity'] = float(v.value)
+            if v.tag == 'TotalCashValue': summary['TotalCashValue'] = float(v.value)
+            if v.tag == 'BuyingPower': summary['BuyingPower'] = float(v.value)
+            if v.tag == 'Currency': summary['Currency'] = v.value
+
+        # 2. Positions
+        positions = self.ib.positions()
+        holdings = []
+        
+        # Enrich with DB data for tracked LEAPS
+        db_positions = await self.db.get_open_positions()
+        db_map = {p['contract_id']: p for p in db_positions}
+
+        for pos in positions:
+            contract = pos.contract
+            item = {
+                "conId": contract.conId,
+                "symbol": contract.localSymbol or contract.symbol,
+                "secType": contract.secType,
+                "quantity": pos.position,
+                "mktPrice": pos.avgCost, # Default fallback
+                "mktValue": 0.0,
+                "unrealizedPnL": 0.0,
+                "type": "OTHER"
+            }
+
+            # Categorization
+            if contract.secType == 'STK':
+                item['type'] = 'STOCK'
+            elif contract.secType == 'OPT':
+                item['type'] = 'OPTION'
+            elif contract.secType in ['BOND', 'BILL']:
+                item['type'] = 'BOND'
+            elif contract.secType in ['CASH', 'FX']:
+                item['type'] = 'CASH'
+
+            # Request market data for price/value (simplified)
+            # In a production bot, we'd use a ticker cache
+            ticker = self.ib.ticker(contract)
+            if ticker:
+                item['mktPrice'] = ticker.marketPrice()
+                item['mktValue'] = item['mktPrice'] * pos.position * (100 if contract.secType == 'OPT' else 1)
+                item['unrealizedPnL'] = (item['mktPrice'] - pos.avgCost) * pos.position * (100 if contract.secType == 'OPT' else 1)
+
+            # Match with DB
+            if contract.conId in db_map:
+                db_info = db_map[contract.conId]
+                item['entry_date'] = db_info['entry_date']
+                item['entry_price'] = db_info['entry_price']
+                item['is_tracked'] = True
+
+            holdings.append(item)
+
+        return {
+            "summary": summary,
+            "holdings": holdings
+        }
+
+    async def process_roll_signal(self):
+        """
+        ROLL logic: Sell oldest option, buy replacement at lower strike.
+        """
+        open_positions = await self.db.get_open_positions()
+        if not open_positions:
+            return
+
+        # FIFO: Oldest is first in list (usually ordered by entry_date)
+        # Ensure they are sorted by date
+        sorted_pos = sorted(open_positions, key=lambda x: str(x['entry_date']))
+        oldest_pos = sorted_pos[0]
+        
+        contract_id = int(oldest_pos['contract_id'])
+        logger.info(f"[ROLL] Replacing oldest position: ContractID {contract_id}")
+
+        # 1. Sell Oldest
+        contract = Contract(conId=contract_id, exchange='SMART')
+        await self.ib.qualifyContractsAsync(contract)
+        mid, _ = await execution.get_mid_price(self.ib, contract)
+        
+        if mid:
+            trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(oldest_pos['quantity']), mid)
+            if trade and trade.orderStatus.status == 'Filled':
+                 now = datetime.now(config.TIMEZONE)
+                 await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'ROLL_EXIT')
+                 logger.info(f"[ROLL] SELL SUCCESS for {contract.localSymbol}")
+                 
+                 # 2. Buy Replacement
+                 # We trigger a normal entry search which will pick current best LEAP (lower strike now)
+                 await self.process_entry_signal()
+            else:
+                 logger.warning("[ROLL] Sell order failed to fill. Aborting roll.")
+        else:
+            logger.warning("[ROLL] Could not get price for sell order.")
 
     async def manage_positions(self, current_underlying_price):
         """

@@ -54,10 +54,39 @@
                 if (data.settings && !document.forms['buy-form'].dataset.filled) {
                     const bf = document.forms['buy-form'];
                     if (bf.entry_drop_pct) bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
+                    if (bf.roll_drop_pct) bf.roll_drop_pct.value = (data.settings.roll_drop_pct * 100).toFixed(2);
                     if (bf.target_delta) bf.target_delta.value = data.settings.target_delta;
                     if (bf.min_expiry_days) bf.min_expiry_days.value = data.settings.min_expiry_days;
                     if (bf.max_positions) bf.max_positions.value = data.settings.max_positions;
                     bf.dataset.filled = "true";
+                }
+
+                // Fill Account Summary
+                if (data.portfolio && data.portfolio.summary) {
+                    const sum = data.portfolio.summary;
+                    document.getElementById('acc-liq').innerText = '$' + sum.NetLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    document.getElementById('acc-cash').innerText = '$' + sum.TotalCashValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    document.getElementById('acc-bp').innerText = '$' + sum.BuyingPower.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                }
+
+                // Portfolio Table
+                const pbody = document.getElementById('portfolio-body');
+                if (pbody && data.portfolio && data.portfolio.holdings) {
+                    pbody.innerHTML = '';
+                    data.portfolio.holdings.forEach(h => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-gray-700 text-xs hover:bg-gray-800";
+                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400';
+                        tr.innerHTML = `
+                            <td class="p-2">${h.symbol}</td>
+                            <td class="p-2 font-mono">${h.secType}</td>
+                            <td class="p-2">${h.quantity}</td>
+                            <td class="p-2">$${h.mktPrice.toFixed(2)}</td>
+                            <td class="p-2 font-bold ${pnlColor}">$${h.unrealizedPnL.toFixed(2)}</td>
+                            <td class="p-2 text-gray-400">$${h.mktValue.toLocaleString()}</td>
+                        `;
+                        pbody.appendChild(tr);
+                    });
                 }
 
                 // Fill Sell Settings
@@ -216,6 +245,7 @@
             const form = new FormData(e.target);
             const data = Object.fromEntries(form.entries());
             if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct) / 100;
+            if (data.roll_drop_pct) data.roll_drop_pct = parseFloat(data.roll_drop_pct) / 100;
             if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
             if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
@@ -291,11 +321,27 @@
     </nav>
 
     <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Dashboard Summary Row (Top) -->
+        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">净资产 (Net Liq)</p>
+                <h3 id="acc-liq" class="text-2xl font-bold font-mono text-blue-400">$0.00</h3>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">可用现金 (Cash)</p>
+                <h3 id="acc-cash" class="text-2xl font-bold font-mono text-green-400">$0.00</h3>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">购买力 (Buying Power)</p>
+                <h3 id="acc-bp" class="text-2xl font-bold font-mono text-purple-400">$0.00</h3>
+            </div>
+        </div>
+
         <!-- Left Col: Positions -->
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                    <h2 class="font-bold text-lg">持仓明细</h2>
+                    <h2 class="font-bold text-lg">LEAPS 策略持仓 (tracked)</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
@@ -314,20 +360,51 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Comprehensive Portfolio (New) -->
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div class="p-4 border-b border-gray-700">
+                    <h2 class="font-bold text-lg">综合持仓 (Stocks, Options, Bonds, Cash)</h2>
+                </div>
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
+                            <tr>
+                                <th class="p-3">资产</th>
+                                <th class="p-3">类型</th>
+                                <th class="p-3">数量</th>
+                                <th class="p-3">现价</th>
+                                <th class="p-3">盈亏</th>
+                                <th class="p-3">市值</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolio-body" class="text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Right Col: Settings -->
         <div class="space-y-6">
             <!-- Buy Settings -->
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">买入条件</h2>
+                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">买入/ROLL 条件</h2>
                 <form id="buy-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">入场跌幅 (%)</label>
-                        <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off"
-                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
-                        <p class="text-xs text-gray-500 mt-1">例如：-1 代表 -1%，-2.5 代表 -2.5%</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1 text-[10px]">入场跌幅
+                                (%)</label>
+                            <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off"
+                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1 text-[10px]">ROLL 跌幅
+                                (%)</label>
+                            <input name="roll_drop_pct" type="number" step="0.1" autocomplete="off"
+                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
+                        </div>
                     </div>
+                    <p class="text-xs text-gray-500 mt-1">ROLL 规则：满仓时若跌幅达到设定值，卖旧买新。</p>
                     <div>
                         <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">目标 Delta</label>
                         <input name="target_delta" type="number" step="0.01" autocomplete="off"

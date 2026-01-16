@@ -74,6 +74,7 @@ class Database:
             'min_expiry_days': ('365', 'int'),
             'max_positions': ('3', 'int'),
             'time_exit_days': ('270', 'int'),
+            'roll_drop_pct': ('-0.05', 'float'),
             'ib_port': ('4004', 'int') # Default port, can be changed via UI
         }
 
