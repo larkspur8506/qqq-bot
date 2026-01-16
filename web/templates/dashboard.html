@@ -51,13 +51,13 @@
                 }
 
                 // Fill Buy Settings
-                if (data.settings && !document.forms['buy-form'].dataset.filled) {
+                if (data.settings && data.settings.entry_drop_pct !== undefined && !document.forms['buy-form'].dataset.filled) {
                     const bf = document.forms['buy-form'];
-                    if (bf.entry_drop_pct) bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
-                    if (bf.roll_drop_pct) bf.roll_drop_pct.value = (data.settings.roll_drop_pct * 100).toFixed(2);
-                    if (bf.target_delta) bf.target_delta.value = data.settings.target_delta;
-                    if (bf.min_expiry_days) bf.min_expiry_days.value = data.settings.min_expiry_days;
-                    if (bf.max_positions) bf.max_positions.value = data.settings.max_positions;
+                    bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
+                    bf.roll_drop_pct.value = (data.settings.roll_drop_pct * 100).toFixed(2);
+                    bf.target_delta.value = data.settings.target_delta;
+                    bf.min_expiry_days.value = data.settings.min_expiry_days;
+                    bf.max_positions.value = data.settings.max_positions;
                     bf.dataset.filled = "true";
                 }
 
@@ -90,13 +90,11 @@
                 }
 
                 // Fill Sell Settings
-                if (data.settings && !document.forms['sell-form'].dataset.filled) {
+                if (data.settings && data.settings.time_exit_days !== undefined && !document.forms['sell-form'].dataset.filled) {
                     const sf = document.forms['sell-form'];
-                    if (sf.time_exit_days) {
-                        sf.time_exit_days.value = data.settings.time_exit_days;
-                        currentMaxHoldDays = data.settings.time_exit_days;
-                        updateExitTiersDisplay(); // Sync tiers display
-                    }
+                    sf.time_exit_days.value = data.settings.time_exit_days;
+                    currentMaxHoldDays = data.settings.time_exit_days;
+                    updateExitTiersDisplay(); // Sync tiers display
                     sf.dataset.filled = "true";
                 }
 

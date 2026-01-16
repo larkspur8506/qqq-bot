@@ -25,16 +25,19 @@ class Strategy:
     async def initialize(self):
         """
         Run startup tasks:
-        1. Set Delayed Market Data (Type 3) if no subscription.
-        2. Qualify QQQ contract.
-        3. Fetch authoritative PrevClose (Daily Bar).
+        1. Load settings from DB.
+        2. Set Delayed Market Data (Type 3) if no subscription.
+        3. Qualify QQQ contract.
+        4. Fetch authoritative PrevClose (Daily Bar).
         Returns: True if successful, False otherwise.
         """
         logger.info("[Strategy] Initializing...")
         
+        # Load Settings immediately so Web UI has data
+        await self.load_settings()
+        
         # Switch to Delayed Market Data (3) as requested by user
         self.ib.reqMarketDataType(3) 
-        
         try:
             await self.ib.qualifyContractsAsync(self.qqq_contract)
             
@@ -94,11 +97,8 @@ class Strategy:
         
         return True
 
-    async def run_cycle(self):
-        """
-        The main logic executed every 5 minutes.
-        """
-        # Reload Settings from DB
+    async def load_settings(self):
+        """Helper to load all settings from DB into memory cache"""
         self.settings['entry_drop_pct'] = await self.db.get_setting('entry_drop_pct', -0.01)
         self.settings['target_delta'] = await self.db.get_setting('target_delta', 0.6)
         self.settings['min_expiry_days'] = await self.db.get_setting('min_expiry_days', 365)
@@ -107,6 +107,12 @@ class Strategy:
         self.settings['delta_tolerance'] = await self.db.get_setting('delta_tolerance', 0.1)
         self.settings['roll_drop_pct'] = await self.db.get_setting('roll_drop_pct', -0.05)
 
+    async def run_cycle(self):
+        """
+        The main logic executed every 5 minutes.
+        """
+        # Reload Settings from DB
+        await self.load_settings()
         if self.prev_close is None:
             await self.initialize() # Retry init if failed previously
             if self.prev_close is None: 
