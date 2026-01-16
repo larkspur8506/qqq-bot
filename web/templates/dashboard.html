@@ -327,6 +327,9 @@
                     auto_invest_min_threshold: parseFloat(formData.get('auto_invest_min_threshold'))
                 };
 
+                const btn = document.getElementById('save-profit-btn');
+                btn.innerText = '保存中...';
+
                 try {
                     const res = await fetch('/api/settings', {
                         method: 'POST',
@@ -334,11 +337,14 @@
                         body: JSON.stringify(settings)
                     });
                     if (res.ok) {
-                        showToast('利润循环设置已更新');
+                        btn.innerText = '已保存！';
+                        setTimeout(() => btn.innerText = '更新利润设置', 2000);
                         fetchStatus();
+                    } else {
+                        btn.innerText = '错误';
                     }
                 } catch (err) {
-                    showToast('保存失败', 'error');
+                    btn.innerText = '保存失败';
                 }
             }
 
@@ -546,7 +552,7 @@
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
                         <p class="text-[10px] text-gray-500 mt-1">当利润余额超过此金额时触发买入。</p>
                     </div>
-                    <button type="submit"
+                    <button id="save-profit-btn" type="submit"
                         class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 rounded transition text-sm">
                         更新利润设置
                     </button>
