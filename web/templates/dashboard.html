@@ -98,6 +98,15 @@
                 btn.innerText = 'Error';
             }
         }
+
+        // Start auto-refresh every 3 seconds
+        setInterval(fetchStatus, 3000);
+
+        // Initialize on page load
+        window.onload = function () {
+            fetchStatus();
+            document.getElementById('settings-form').addEventListener('submit', saveSettings);
+        };
     </script>
 
     <!-- Top Bar -->
