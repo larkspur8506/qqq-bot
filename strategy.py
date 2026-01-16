@@ -41,51 +41,42 @@ class Strategy:
         try:
             await self.ib.qualifyContractsAsync(self.qqq_contract)
             
-            # Fetch 1 day of historical data to get yesterday's close
-            # This is robust to mid-day restarts
-            bars = await self.ib.reqHistoricalDataAsync(
-                self.qqq_contract, 
-                endDateTime='', 
-                durationStr='1 D', 
-                barSizeSetting='1 day', 
-                whatToShow='TRADES', 
-                useRTH=True
-            )
-        
-            if bars:
-                # The returned bar is "today" if market is open/closed, or yesterday?
-                # ib_insync '1 D' usually returns the last completed day if strictly historical, 
-                # but if endDateTime is empty, it returns up to now.
-                # We specifically want the CLOSE of the PREVIOUS session.
-                # Let's request 2 days to be safe and look at the one before today.
-                 bars_2d = await self.ib.reqHistoricalDataAsync(
-                    self.qqq_contract, 
-                    endDateTime='', 
-                    durationStr='2 D', 
-                    barSizeSetting='1 day', 
-                    whatToShow='TRADES', 
-                    useRTH=True
+            # Helper to request historical data
+            async def get_bars(what):
+                return await self.ib.reqHistoricalDataAsync(
+                    self.qqq_contract, endDateTime='', durationStr='2 D', 
+                    barSizeSetting='1 day', whatToShow=what, useRTH=True
                 )
-                 if len(bars_2d) >= 1:
-                     # The last bar might be "today" (partial) or "yesterday" (if before open)
-                     # We check the date.
-                     today_str = datetime.now(config.TIMEZONE).date().isoformat()
-                     
-                     # Iterate backwards to find the first bar that is NOT today
-                     found_prev = False
-                     for bar in reversed(bars_2d):
-                         bar_date_str = bar.date.isoformat()
-                         if bar_date_str < today_str:
-                             self.prev_close = bar.close
-                             logger.info(f"[Strategy] PrevClose established from {bar.date}: {self.prev_close}")
-                             found_prev = True
-                             break
-                     
-                     if not found_prev:
-                         # This implies both bars are today? Unlikely. 
-                         # Fallback: Just take the first bar's close if it's the only one available and check date
-                         logger.warning("[Strategy] Could not definitively identify previous day bar. Using first available close.")
-                         self.prev_close = bars_2d[0].close
+
+            # Try TRADES first, then MIDPOINT
+            bars_2d = await get_bars('TRADES')
+            if not bars_2d:
+                logger.info("[Strategy] TRADES data unavailable, trying MIDPOINT...")
+                bars_2d = await get_bars('MIDPOINT')
+
+            if bars_2d:
+                today_str = datetime.now(config.TIMEZONE).date().isoformat()
+                found_prev = False
+                for bar in reversed(bars_2d):
+                    bar_date_str = bar.date.isoformat() if hasattr(bar.date, 'isoformat') else str(bar.date)
+                    if bar_date_str < today_str:
+                        self.prev_close = bar.close
+                        logger.info(f"[Strategy] PrevClose established from {bar_date_str}: {self.prev_close}")
+                        found_prev = True
+                        break
+                
+                if not found_prev:
+                    self.prev_close = bars_2d[0].close
+                    logger.warning(f"[Strategy] Using first available bar close: {self.prev_close}")
+            
+            # Last Resort: If history query failed, use live ticker data
+            if self.prev_close is None:
+                logger.warning("[Strategy] History query failed. Attempting to get PrevClose from Snapshot...")
+                ticker = self.ib.reqMktData(self.qqq_contract, '', True, False)
+                await asyncio.sleep(2)
+                if ticker.close and ticker.close > 0:
+                    self.prev_close = ticker.close
+                    logger.info(f"[Strategy] PrevClose established from Ticker Snapshot: {self.prev_close}")
         
         except Exception as e:
             logger.error(f"[Strategy] Error during initialization: {e}")
