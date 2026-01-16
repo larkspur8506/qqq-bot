@@ -195,3 +195,9 @@ async def update_settings(data: dict):
              bot_strategy.settings[k] = v
              
     return {"status": "ok"}
+
+@app.get("/api/exit_tiers")
+async def get_exit_tiers():
+    """Returns current exit tier configuration"""
+    tiers = await bot_db.get_exit_tiers()
+    return {"tiers": tiers}

@@ -1,40 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Initialization - QQQ LEAPS Bot</title>
+    <title>系统初始化 - QQQ LEAPS Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-gray-900 text-gray-100 h-screen flex items-center justify-center">
     <div class="w-full max-w-lg bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-green-500 mb-2">System Initialization</h1>
-            <p class="text-gray-400">No administrators detected. Please create the Master Account.</p>
+            <h1 class="text-3xl font-bold text-green-500 mb-2">系统初始化</h1>
+            <p class="text-gray-400">未检测到管理员账户，请创建主账户。</p>
         </div>
 
         <form action="/setup" method="POST" class="space-y-6">
             <div>
-                <label class="block text-sm font-medium mb-1">Admin Username</label>
+                <label class="block text-sm font-medium mb-1">管理员用户名</label>
                 <input type="text" name="username" placeholder="admin" required
                     class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:outline-none focus:border-green-500">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1">Master Password</label>
+                <label class="block text-sm font-medium mb-1">主密码</label>
                 <input type="password" name="password" required
                     class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:outline-none focus:border-green-500">
             </div>
 
             <div class="bg-gray-700/50 p-4 rounded text-sm text-gray-300">
-                <p><strong>Note:</strong> This password will be hashed securely using Bcrypt.
-                    The configuration database is stored in the Docker volume <code>/data_volume</code>.</p>
+                <p><strong>提示：</strong> 密码将使用 Bcrypt 安全加密。
+                    配置数据库存储在 Docker 卷 <code>/data</code> 中。</p>
             </div>
 
             <button type="submit"
                 class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition duration-200 uppercase tracking-wide">
-                Initialize System
+                初始化系统
             </button>
         </form>
     </div>

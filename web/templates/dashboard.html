@@ -1,44 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q-LEAPS Dashboard</title>
+    <title>Q-LEAPS 控制台</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Fix for 'def' keyword in JS code above lol -->
-    <script>
-        // Overwriting the previous script block essentially because I wrote 'def' instead of 'function' in python-brain mode.
-        // Let's fix it properly here.
-    </script>
-</head>
-
-<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
-
-    <!-- FIX SCRIPT -->
     <script>
         async function fetchStatus() {
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
 
+                // Connection Status
                 const connDot = document.getElementById('conn-dot');
                 const connText = document.getElementById('conn-text');
                 if (data.connected) {
                     connDot.classList.remove('bg-red-500');
                     connDot.classList.add('bg-green-500');
-                    connText.innerText = 'Connected';
+                    connText.innerText = '已连接';
                 } else {
                     connDot.classList.remove('bg-green-500');
                     connDot.classList.add('bg-red-500');
-                    connText.innerText = 'Disconnected';
+                    connText.innerText = '未连接';
                 }
 
+                // Positions Table
                 const tbody = document.getElementById('pos-body');
                 tbody.innerHTML = '';
                 if (!data.positions || data.positions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No active positions</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">暂无持仓</td></tr>';
                 } else {
                     data.positions.forEach(pos => {
                         const tr = document.createElement('tr');
@@ -50,27 +42,55 @@
                             <td class="p-3">$${pos.entry_price.toFixed(2)}</td>
                             <td class="p-3">${pos.quantity}</td>
                             <td class="p-3 font-mono">--</td> 
-                            <td class="p-3"><span class="bg-green-900 text-green-200 px-2 py-1 rounded text-xs font-bold">OPEN</span></td>
+                            <td class="p-3"><span class="bg-green-900 text-green-200 px-2 py-1 rounded text-xs font-bold">持有中</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
                 }
 
-                // Fill Settings if empty (On first load only, to avoid locking inputs)
-                const sForm = document.forms['settings-form'];
-                if (data.settings && !sForm.dataset.filled) {
-                    if (sForm.entry_drop_pct) sForm.entry_drop_pct.value = data.settings.entry_drop_pct;
-                    if (sForm.target_delta) sForm.target_delta.value = data.settings.target_delta;
-                    if (sForm.min_expiry_days) sForm.min_expiry_days.value = data.settings.min_expiry_days;
-                    if (sForm.max_positions) sForm.max_positions.value = data.settings.max_positions;
-                    if (sForm.time_exit_days) sForm.time_exit_days.value = data.settings.time_exit_days;
-                    sForm.dataset.filled = "true";
+                // Fill Buy Settings
+                if (data.settings && !document.forms['buy-form'].dataset.filled) {
+                    const bf = document.forms['buy-form'];
+                    if (bf.entry_drop_pct) bf.entry_drop_pct.value = data.settings.entry_drop_pct;
+                    if (bf.target_delta) bf.target_delta.value = data.settings.target_delta;
+                    if (bf.min_expiry_days) bf.min_expiry_days.value = data.settings.min_expiry_days;
+                    if (bf.max_positions) bf.max_positions.value = data.settings.max_positions;
+                    bf.dataset.filled = "true";
+                }
+
+                // Fill Sell Settings
+                if (data.settings && !document.forms['sell-form'].dataset.filled) {
+                    const sf = document.forms['sell-form'];
+                    if (sf.time_exit_days) sf.time_exit_days.value = data.settings.time_exit_days;
+                    sf.dataset.filled = "true";
                 }
 
             } catch (e) { console.error(e); }
         }
 
-        async function saveSettings(e) {
+        async function fetchExitTiers() {
+            try {
+                const res = await fetch('/api/exit_tiers');
+                const data = await res.json();
+
+                const tbody = document.getElementById('tiers-body');
+                tbody.innerHTML = '';
+
+                if (data.tiers && data.tiers.length > 0) {
+                    data.tiers.forEach((tier, idx) => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-gray-700";
+                        tr.innerHTML = `
+                            <td class="p-3">${tier.days_min}-${tier.days_max} 天</td>
+                            <td class="p-3 font-bold text-green-400">${(tier.target_pnl * 100).toFixed(0)}%</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveBuySettings(e) {
             e.preventDefault();
             const form = new FormData(e.target);
             const data = Object.fromEntries(form.entries());
@@ -79,11 +99,10 @@
             if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
             if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
-            if (data.time_exit_days) data.time_exit_days = parseInt(data.time_exit_days);
 
-            const btn = document.getElementById('save-btn');
+            const btn = document.getElementById('save-buy-btn');
             const originalText = btn.innerText;
-            btn.innerText = 'Saving...';
+            btn.innerText = '保存中...';
 
             const res = await fetch('/api/settings', {
                 method: 'POST',
@@ -92,22 +111,51 @@
             });
 
             if (res.ok) {
-                btn.innerText = 'Saved!';
+                btn.innerText = '已保存！';
                 setTimeout(() => btn.innerText = originalText, 2000);
             } else {
-                btn.innerText = 'Error';
+                btn.innerText = '错误';
             }
         }
 
-        // Start auto-refresh every 3 seconds
+        async function saveSellSettings(e) {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            const data = Object.fromEntries(form.entries());
+
+            if (data.time_exit_days) data.time_exit_days = parseInt(data.time_exit_days);
+
+            const btn = document.getElementById('save-sell-btn');
+            const originalText = btn.innerText;
+            btn.innerText = '保存中...';
+
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                btn.innerText = '已保存！';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            } else {
+                btn.innerText = '错误';
+            }
+        }
+
+        // Auto-refresh
         setInterval(fetchStatus, 3000);
 
-        // Initialize on page load
         window.onload = function () {
             fetchStatus();
-            document.getElementById('settings-form').addEventListener('submit', saveSettings);
+            fetchExitTiers();
+            document.getElementById('buy-form').addEventListener('submit', saveBuySettings);
+            document.getElementById('sell-form').addEventListener('submit', saveSellSettings);
         };
     </script>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
 
     <!-- Top Bar -->
     <nav class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
@@ -117,12 +165,12 @@
             </h1>
             <div class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">
                 <div id="conn-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
-                <span id="conn-text" class="text-xs text-gray-300 font-mono">Disconnected</span>
+                <span id="conn-text" class="text-xs text-gray-300 font-mono">未连接</span>
             </div>
         </div>
         <div>
             <form action="/logout" method="POST">
-                <button class="text-xs text-gray-500 hover:text-white transition">Sign Out</button>
+                <button class="text-xs text-gray-500 hover:text-white transition">退出</button>
             </form>
         </div>
     </nav>
@@ -133,19 +181,19 @@
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                    <h2 class="font-bold text-lg">Active Positions</h2>
+                    <h2 class="font-bold text-lg">持仓明细</h2>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
                             <tr>
-                                <th class="p-3">Sym</th>
-                                <th class="p-3">ConID</th>
-                                <th class="p-3">Entry Date</th>
-                                <th class="p-3">Price</th>
-                                <th class="p-3">Qty</th>
-                                <th class="p-3">Live PnL</th>
-                                <th class="p-3">Status</th>
+                                <th class="p-3">代码</th>
+                                <th class="p-3">合约ID</th>
+                                <th class="p-3">开仓日期</th>
+                                <th class="p-3">开仓价</th>
+                                <th class="p-3">数量</th>
+                                <th class="p-3">浮盈</th>
+                                <th class="p-3">状态</th>
                             </tr>
                         </thead>
                         <tbody id="pos-body" class="text-sm">
@@ -158,48 +206,78 @@
 
         <!-- Right Col: Settings -->
         <div class="space-y-6">
+            <!-- Buy Settings -->
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">Strategy Config</h2>
-                <form id="settings-form" class="space-y-4">
+                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">买入条件</h2>
+                <form id="buy-form" class="space-y-4">
                     <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Entry Drop %</label>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">入场跌幅 (%)</label>
                         <input name="entry_drop_pct" type="number" step="0.001"
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
-                        <p class="text-xs text-gray-500 mt-1">Triggers scan (e.g., -0.01 for -1%)</p>
+                        <p class="text-xs text-gray-500 mt-1">例如：-0.01 代表 -1%</p>
                     </div>
 
                     <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Target Delta</label>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">目标 Delta</label>
                         <input name="target_delta" type="number" step="0.01"
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Min Expiry
-                                (Days)</label>
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">最小到期天数</label>
                             <input name="min_expiry_days" type="number"
                                 class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Max Pos</label>
+                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">最大持仓</label>
                             <input name="max_positions" type="number"
                                 class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">Max Hold (Days)</label>
-                        <input name="time_exit_days" type="number"
-                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
-                        <p class="text-xs text-gray-500 mt-1">Force exit (Shield)</p>
-                    </div>
-
-                    <button id="save-btn" type="submit"
+                    <button id="save-buy-btn" type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
-                        Update Configuration
+                        更新买入设置
                     </button>
                 </form>
+            </div>
+
+            <!-- Sell Settings -->
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
+                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">卖出条件</h2>
+
+                <!-- Time Exit -->
+                <form id="sell-form" class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">强制平仓天数</label>
+                        <input name="time_exit_days" type="number"
+                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
+                        <p class="text-xs text-gray-500 mt-1">超过此天数强制卖出</p>
+                    </div>
+
+                    <button id="save-sell-btn" type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
+                        更新卖出设置
+                    </button>
+                </form>
+
+                <!-- Exit Tiers Display -->
+                <div class="pt-4 border-t border-gray-700">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3">止盈梯度</h3>
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-700/50 text-gray-400">
+                            <tr>
+                                <th class="p-2 text-left">持仓天数</th>
+                                <th class="p-2 text-left">目标收益</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tiers-body" class="text-gray-300">
+                            <!-- JS Injection -->
+                        </tbody>
+                    </table>
+                    <p class="text-xs text-gray-500 mt-3">* 止盈梯度由数据库种子数据管理</p>
+                </div>
             </div>
         </div>
 
