@@ -4,7 +4,7 @@ fastapi
 uvicorn[standard]
 jinja2
 python-multipart
-passlib[bcrypt]
+bcrypt
 aiosqlite
 pytz>=2023.3
 python-jose[cryptography]
