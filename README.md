@@ -1,94 +1,85 @@
-# QQQ LEAPS Alpha Bot (v1.0)
+# QQQ LEAPS Mastery Bot (v2.0)
 
-这是一个针对 Interactive Brokers (IBKR) 的全自动交易机器人，实施 **Core-Satellite (核心-卫星)** 策略，专注于 **QQQ LEAPS (长期期权)** 的“哑铃策略”。
+这是一个针对 Interactive Brokers (IBKR) 的高级全自动交易系统，实施 **Core-Satellite (核心-卫星)** 策略，专注于 **QQQ LEAPS (长期期权)** 交易。
 
-## � Docker 部署 (Docker Deployment) - 推荐
+v2.0 版本引入了 **Web 控制面板**、**SQLite 数据库** 和 **动态配置系统**，使管理更加安全和灵活。
 
-### 1. 先决条件 (Prerequisites)
-*   **Docker Desktop**: 确保已安装并启动。
-*   **IB Gateway 容器**: 确保 `ibkr-gateway` 正在运行，并且加入到了 `qqq_default` 网络中。
-    *   端口: 4004
-    *   网络: `qqq_default`
+## ✨ 新特性 (v2.0 Features)
 
-### 2. 运行 (Running)
-在项目根目录下 (确保有 `docker-compose.yml`) 执行：
+*   **📊 Web 仪表盘**: 实时监控连接状态、持仓详情和策略配置。
+*   **⚙️ 动态配置**: 无需重启，直接在网页上修改 Target Delta, Entry Drop % 等核心参数。
+*   **🔒 安全认证**: 首次启动强制初始化管理员账号，支持密码登录和会话管理。
+*   **💾 SQLite 持久化**: 替代 CSV，提供更可靠的数据存储和并发支持。
 
-```bash
-# 1. (首次) 登录 GitHub Container Registry
-# 使用你的 GitHub 用户名和 Personal Access Token (PAT)
-echo <Your-PAT> | docker login ghcr.io -u larkspur8506 --password-stdin
+---
 
-# 2. 拉取最新镜像
-docker-compose pull
+## 🚀 部署指南 (Deployment)
 
-# 3. 启动
-docker-compose up -d
-```
-*   Bot 会自动从 GitHub 拉取最新镜像并连接到 `ibkr-gateway:4004`。
+### 1. Docker 部署 (推荐)
 
-### 3. 查看日志 (Logs)
+**先决条件**:
+*   已运行 `ibkr-gateway` 容器 (Port 4004, Network `qqq_default`)。
+*   确保 VPS 防火墙放行 **8000** 端口。
+
+**启动步骤**:
+
+1.  **准备数据卷** (用于持久化保存账号和配置):
+    ```bash
+    docker volume create qqq-bot
+    ```
+
+2.  **拉取并运行**:
+    ```bash
+    # 确保 docker-compose.yml 存在
+    docker-compose pull
+    docker-compose up -d
+    ```
+
+3.  **初始化系统**:
+    *   打开浏览器访问: `http://<YOUR_VPS_IP>:8000`
+    *   按照向导创建管理员 (Admin) 账号。
+    *   登录后即可进入 Dashboard。
+
+### 2. 查看日志
+
 ```bash
 docker-compose logs -f
 ```
 
-### 4. 停止 (Stop)
-```bash
-docker-compose down
-```
-
-## 🖥️ 本地部署 (Local Deployment)
-
-1.  **先决条件**:
-    *   已安装并运行 **Interactive Brokers Gateway** 或 **TWS**。
-    *   **API 设置**: 在 TWS/Gateway 中启用 "Enable ActiveX and Socket Clients"。
-    *   **端口**: 配置 TWS/Gateway 监听端口 **7497**。
-    *   已安装 **Python 3.10+**。
-
-2.  **安装依赖**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **运行**:
-    双击 `run.bat` 脚本，或在命令行执行：
-    ```bash
-    python main.py
-    ```
+---
 
 ## 🧠 策略逻辑 (Strategy Logic)
 
+本系统由两个并发进程驱动：**交易引擎 (Strategy Loop)** 和 **Web 服务器 (FastAPI)**。
+
 ### 矛: 入场 (The Spear / Entry)
 *   **标的**: QQQ 期权 (LEAPS)。
-*   **触发条件**: 每 5 分钟检测一次，如果 QQQ 价格较 **前一日收盘价** 下跌幅度达到或超过 **-1%**。
+*   **触发条件 (可配置)**: 默认每 5 分钟检测一次，当 QQQ 较昨日收盘价下跌 **-1%** (Entry Drop Pct) 时触发。
 *   **合约选择**:
-    *   **到期日**: > 365 天 (一年以上)。
-    *   **Delta**: ~0.6 (轻度实值 ITM)。
-*   **过滤条件**: 
-    *   **每日一单**: 严格限制每个自然日最多开仓 1 次。
-    *   **最大持仓**: 最多同时持有 3 个合约。
+    *   **到期日**: > 365 天 (默认)。
+    *   **Delta**: ~0.6 (默认，可配置)。
 
 ### 盾: 出场/风控 (The Shield / Exit)
-*   **阶梯止盈 (Stepped Take Profit)**: 根据持仓时间动态调整目标：
-    *   **0-4 个月 (蜜月期)**: 目标 **+50%**。
-    *   **4-6 个月**: 目标降至 **+30%**。
-    *   **7-9 个月 (安全期)**: 目标降至 **+10%**。
-*   **强制平仓 (Force Exit)**: 持仓超过 **270 天** (9个月) 且未达到止盈目标，强制卖出，防止时间价值加速损耗。
+*   **阶梯止盈 (Stepped Take Profit)**:
+    *   **0-4 个月**: 目标 +50%。
+    *   **4-6 个月**: 目标降至 +30%。
+    *   **> 6 个月**: 目标降至 +10%。
+*   **强制平仓 (Force Exit)**: 持仓超过 **270 天** (默认) 强制离场，规避时间价值损耗。
 
-## 🛡️ 安全特性 (Safety Features)
-*   **重启恢复 (Restart Resilience)**: 每次启动时，通过请求历史数据 (Historical Data) 获取权威的“昨日收盘价”，防止盘中重启导致数据偏差。
-*   **价差保护 (Spread Protection)**: 如果 `(Ask - Bid) / Mid > 1%` (价差过大)，则拒绝交易，防止流动性不足导致的滑点。
-*   **规模保护 (Size Protection)**: 单个合约权利金限制在 $12,000 以内。
-*   **初始化重试 (Initialization Retry)**: 如果初始化失败 3 次，程序将暂停 15 分钟，防止触发 IBKR API 流量限制。
+---
 
 ## 📂 文件结构 (File Structure)
 
-*   `main.py`: 主程序入口，负责连接管理、重连循环和异常处理。
-*   `strategy.py`: 核心策略逻辑 (信号扫描、LEAPS 筛选、出场检查)。
-*   `execution.py`: 执行模块 (下单、中点价格计算、安全检查)。
-*   `persistence.py`: 持久化层，管理 `trades.csv` 数据库，负责状态恢复。
-*   `config.py`: 配置文件 (端口、参数限制、时区设置)。
-*   `reporting.py`: 每日报告生成器。
-*   `trades.csv`: 本地交易数据库 (程序运行时自动生成)。
+*   **`main.py`**: 系统入口，同时启动 `ib_insync` 循环和 `FastAPI` 服务器。
+*   **`strategy.py`**: 核心交易逻辑，现在从 DB 读取配置。
+*   **`persistence.py`**: SQLite 数据库层 (处理 `admin_users`, `system_settings`, `trades`)。
+*   **`web/`**: Web 模块。
+    *   `server.py`: FastAPI 应用与 API 路由。
+    *   `auth.py`: 密码哈希与 JWT 认证。
+    *   `templates/`: Jinja2 前端模板 (`dashboard.html` 等)。
+*   **`Dockerfile`**: 包含 Python 3.10 环境及 Web 依赖。
+
+---
 
 ## ⚠️ 免责声明 (Disclaimer)
 本软件仅供教育和研究使用。自动化交易存在高风险，可能导致资金损失。在使用实盘资金前，请务必进行充分的模拟盘测试 (Paper Trading)。使用风险自负。
