@@ -201,3 +201,16 @@ async def get_exit_tiers():
     """Returns current exit tier configuration"""
     tiers = await bot_db.get_exit_tiers()
     return {"tiers": tiers}
+
+@app.post("/api/exit_tiers")
+async def update_exit_tiers(data: dict):
+    """
+    Updates exit tiers. 
+    Expects data: {"tiers": [{"days_min": 0, "days_max": 120, "target_pnl": 0.5}, ...]}
+    """
+    tiers = data.get("tiers", [])
+    if tiers:
+        await bot_db.update_exit_tiers(tiers)
+        # We don't have a specific strategy cache for tiers yet, 
+        # but strategy.py re-reads them every cycle.
+    return {"status": "ok"}

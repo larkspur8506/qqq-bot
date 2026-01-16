@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
+        let currentMaxHoldDays = 270;
+
         async function fetchStatus() {
             try {
                 const res = await fetch('/api/status');
@@ -48,11 +50,9 @@
                     });
                 }
 
-
                 // Fill Buy Settings
                 if (data.settings && !document.forms['buy-form'].dataset.filled) {
                     const bf = document.forms['buy-form'];
-                    // Convert decimal to percentage for display: -0.01 → -1
                     if (bf.entry_drop_pct) bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
                     if (bf.target_delta) bf.target_delta.value = data.settings.target_delta;
                     if (bf.min_expiry_days) bf.min_expiry_days.value = data.settings.min_expiry_days;
@@ -63,7 +63,11 @@
                 // Fill Sell Settings
                 if (data.settings && !document.forms['sell-form'].dataset.filled) {
                     const sf = document.forms['sell-form'];
-                    if (sf.time_exit_days) sf.time_exit_days.value = data.settings.time_exit_days;
+                    if (sf.time_exit_days) {
+                        sf.time_exit_days.value = data.settings.time_exit_days;
+                        currentMaxHoldDays = data.settings.time_exit_days;
+                        updateExitTiersDisplay(); // Sync tiers display
+                    }
                     sf.dataset.filled = "true";
                 }
 
@@ -74,79 +78,184 @@
             try {
                 const res = await fetch('/api/exit_tiers');
                 const data = await res.json();
-
-                const tbody = document.getElementById('tiers-body');
-                tbody.innerHTML = '';
-
-                if (data.tiers && data.tiers.length > 0) {
-                    data.tiers.forEach((tier, idx) => {
-                        const tr = document.createElement('tr');
-                        tr.className = "border-b border-gray-700";
-                        tr.innerHTML = `
-                            <td class="p-3">${tier.days_min}-${tier.days_max} 天</td>
-                            <td class="p-3 font-bold text-green-400">${(tier.target_pnl * 100).toFixed(0)}%</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
+                renderTiers(data.tiers);
             } catch (e) { console.error(e); }
+        }
+
+        function renderTiers(tiers) {
+            const tbody = document.getElementById('tiers-body');
+            tbody.innerHTML = '';
+
+            tiers.forEach((tier, idx) => {
+                const isLast = idx === tiers.length - 1;
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-700 tier-row";
+                tr.innerHTML = `
+                    <td class="p-2">
+                        <div class="flex items-center space-x-1">
+                            <input type="number" class="tier-min w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" value="${tier.days_min}">
+                            <span>-</span>
+                            <input type="number" class="tier-max w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" 
+                                   value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
+                        </div>
+                    </td>
+                    <td class="p-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="number" class="tier-pnl w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center text-green-400 font-bold" value="${(tier.target_pnl * 100).toFixed(0)}">
+                            <span>%</span>
+                        </div>
+                    </td>
+                    <td class="p-2 text-right">
+                        <button onclick="removeTierRow(this)" class="text-red-500 hover:text-red-400">×</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateExitTiersDisplay();
+        }
+
+        function addTierRow() {
+            const tbody = document.getElementById('tiers-body');
+            const rows = tbody.querySelectorAll('.tier-row');
+            let lastMax = 0;
+            if (rows.length > 0) {
+                // Update previous last row to be editable if it's not the last anymore
+                const prevLastMax = rows[rows.length - 1].querySelector('.tier-max');
+                prevLastMax.disabled = false;
+                lastMax = parseInt(prevLastMax.value) || 0;
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-gray-700 tier-row";
+            tr.innerHTML = `
+                <td class="p-2">
+                    <div class="flex items-center space-x-1">
+                        <input type="number" class="tier-min w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" value="${lastMax + 1}">
+                        <span>-</span>
+                        <input type="number" class="tier-max w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" value="${currentMaxHoldDays}" disabled>
+                    </div>
+                </td>
+                <td class="p-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="number" class="tier-pnl w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center text-green-400 font-bold" value="10">
+                        <span>%</span>
+                    </div>
+                </td>
+                <td class="p-2 text-right">
+                    <button onclick="removeTierRow(this)" class="text-red-500 hover:text-red-400">×</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            updateExitTiersDisplay();
+        }
+
+        function removeTierRow(btn) {
+            btn.closest('tr').remove();
+            const rows = document.querySelectorAll('.tier-row');
+            if (rows.length > 0) {
+                const lastIdx = rows.length - 1;
+                const lastMax = rows[lastIdx].querySelector('.tier-max');
+                lastMax.value = currentMaxHoldDays;
+                lastMax.disabled = true;
+            }
+        }
+
+        function updateExitTiersDisplay() {
+            const rows = document.querySelectorAll('.tier-row');
+            rows.forEach((row, idx) => {
+                const min = parseInt(row.querySelector('.tier-min').value);
+                const isLast = idx === rows.length - 1;
+
+                if (isLast) {
+                    row.querySelector('.tier-max').value = currentMaxHoldDays;
+                }
+
+                if (min >= currentMaxHoldDays) {
+                    row.classList.add('opacity-30', 'grayscale');
+                    row.title = "起始天数超过强制平仓天数，此阶梯无效";
+                } else {
+                    row.classList.remove('opacity-30', 'grayscale');
+                    row.title = "";
+                }
+            });
+        }
+
+        async function saveExitTiers() {
+            const rows = document.querySelectorAll('.tier-row');
+            const tiers = [];
+            rows.forEach(row => {
+                const min = parseInt(row.querySelector('.tier-min').value);
+                // If it's the last row, use the global max hold days
+                const max = row.querySelector('.tier-max').disabled ? currentMaxHoldDays : parseInt(row.querySelector('.tier-max').value);
+                const pnl = parseFloat(row.querySelector('.tier-pnl').value) / 100;
+
+                if (min < currentMaxHoldDays) {
+                    tiers.push({ days_min: min, days_max: max, target_pnl: pnl });
+                }
+            });
+
+            const btn = document.getElementById('save-tiers-btn');
+            btn.innerText = '保存中...';
+
+            const res = await fetch('/api/exit_tiers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tiers })
+            });
+
+            if (res.ok) {
+                btn.innerText = '已保存！';
+                setTimeout(() => btn.innerText = '保存止盈梯度', 2000);
+            } else {
+                btn.innerText = '错误';
+            }
         }
 
         async function saveBuySettings(e) {
             e.preventDefault();
             const form = new FormData(e.target);
             const data = Object.fromEntries(form.entries());
-
-            // Convert percentage to decimal: -1 → -0.01
             if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct) / 100;
             if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
             if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
 
             const btn = document.getElementById('save-buy-btn');
-            const originalText = btn.innerText;
             btn.innerText = '保存中...';
-
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-
             if (res.ok) {
                 btn.innerText = '已保存！';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            } else {
-                btn.innerText = '错误';
-            }
+                setTimeout(() => btn.innerText = '更新买入设置', 2000);
+            } else { btn.innerText = '错误'; }
         }
 
         async function saveSellSettings(e) {
             e.preventDefault();
             const form = new FormData(e.target);
             const data = Object.fromEntries(form.entries());
-
-            if (data.time_exit_days) data.time_exit_days = parseInt(data.time_exit_days);
+            if (data.time_exit_days) {
+                data.time_exit_days = parseInt(data.time_exit_days);
+                currentMaxHoldDays = data.time_exit_days;
+                updateExitTiersDisplay();
+            }
 
             const btn = document.getElementById('save-sell-btn');
-            const originalText = btn.innerText;
             btn.innerText = '保存中...';
-
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-
             if (res.ok) {
                 btn.innerText = '已保存！';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            } else {
-                btn.innerText = '错误';
-            }
+                setTimeout(() => btn.innerText = '更新卖出设置', 2000);
+            } else { btn.innerText = '错误'; }
         }
 
-        // Auto-refresh
         setInterval(fetchStatus, 3000);
 
         window.onload = function () {
@@ -154,12 +263,17 @@
             fetchExitTiers();
             document.getElementById('buy-form').addEventListener('submit', saveBuySettings);
             document.getElementById('sell-form').addEventListener('submit', saveSellSettings);
+
+            // Re-sync tiers display if manual input changes
+            document.forms['sell-form'].time_exit_days.addEventListener('input', (e) => {
+                currentMaxHoldDays = parseInt(e.target.value) || 0;
+                updateExitTiersDisplay();
+            });
         };
     </script>
 </head>
 
 <body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
-
     <!-- Top Bar -->
     <nav class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
         <div class="flex items-center space-x-4">
@@ -171,15 +285,12 @@
                 <span id="conn-text" class="text-xs text-gray-300 font-mono">未连接</span>
             </div>
         </div>
-        <div>
-            <form action="/logout" method="POST">
-                <button class="text-xs text-gray-500 hover:text-white transition">退出</button>
-            </form>
-        </div>
+        <form action="/logout" method="POST">
+            <button class="text-xs text-gray-500 hover:text-white transition">退出</button>
+        </form>
     </nav>
 
     <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         <!-- Left Col: Positions -->
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
@@ -199,9 +310,7 @@
                                 <th class="p-3">状态</th>
                             </tr>
                         </thead>
-                        <tbody id="pos-body" class="text-sm">
-                            <!-- JS Injection -->
-                        </tbody>
+                        <tbody id="pos-body" class="text-sm"></tbody>
                     </table>
                 </div>
             </div>
@@ -215,30 +324,27 @@
                 <form id="buy-form" class="space-y-4">
                     <div>
                         <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">入场跌幅 (%)</label>
-                        <input name="entry_drop_pct" type="number" step="0.1"
+                        <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off"
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
                         <p class="text-xs text-gray-500 mt-1">例如：-1 代表 -1%，-2.5 代表 -2.5%</p>
                     </div>
-
                     <div>
                         <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">目标 Delta</label>
-                        <input name="target_delta" type="number" step="0.01"
+                        <input name="target_delta" type="number" step="0.01" autocomplete="off"
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">最小到期天数</label>
-                            <input name="min_expiry_days" type="number"
+                            <input name="min_expiry_days" type="number" autocomplete="off"
                                 class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">最大持仓</label>
-                            <input name="max_positions" type="number"
+                            <input name="max_positions" type="number" autocomplete="off"
                                 class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
                         </div>
                     </div>
-
                     <button id="save-buy-btn" type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
                         更新买入设置
@@ -249,43 +355,43 @@
             <!-- Sell Settings -->
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
                 <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">卖出条件</h2>
-
-                <!-- Time Exit -->
                 <form id="sell-form" class="space-y-4 mb-6">
                     <div>
                         <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">强制平仓天数</label>
-                        <input name="time_exit_days" type="number"
+                        <input name="time_exit_days" type="number" autocomplete="off"
                             class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
-                        <p class="text-xs text-gray-500 mt-1">超过此天数强制卖出</p>
+                        <p class="text-xs text-gray-500 mt-1">超过此天数强制卖出（止盈梯度自动联动）</p>
                     </div>
-
                     <button id="save-sell-btn" type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
                         更新卖出设置
                     </button>
                 </form>
 
-                <!-- Exit Tiers Display -->
                 <div class="pt-4 border-t border-gray-700">
-                    <h3 class="text-sm font-bold text-gray-300 mb-3">止盈梯度</h3>
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-gray-300">止盈阶梯</h3>
+                        <button onclick="addTierRow()"
+                            class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white">+ 添加</button>
+                    </div>
                     <table class="w-full text-xs">
                         <thead class="bg-gray-700/50 text-gray-400">
                             <tr>
                                 <th class="p-2 text-left">持仓天数</th>
-                                <th class="p-2 text-left">目标收益</th>
+                                <th class="p-2 text-left">止盈 %</th>
+                                <th class="p-2 text-right"></th>
                             </tr>
                         </thead>
-                        <tbody id="tiers-body" class="text-gray-300">
-                            <!-- JS Injection -->
-                        </tbody>
+                        <tbody id="tiers-body" class="text-gray-300"></tbody>
                     </table>
-                    <p class="text-xs text-gray-500 mt-3">* 止盈梯度由数据库种子数据管理</p>
+                    <button id="save-tiers-btn" onclick="saveExitTiers()"
+                        class="w-full mt-4 bg-green-700 hover:bg-green-600 text-white text-xs font-bold py-2 rounded transition">
+                        保存止盈梯度
+                    </button>
                 </div>
             </div>
         </div>
-
     </div>
-
 </body>
 
 </html>

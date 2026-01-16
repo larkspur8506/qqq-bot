@@ -127,6 +127,20 @@ class Database:
             async with db.execute("SELECT * FROM exit_tiers ORDER BY days_min ASC") as cursor:
                 return [dict(row) for row in await cursor.fetchall()]
 
+    async def update_exit_tiers(self, tiers_list: list):
+        """
+        Bulk updates exit_tiers table.
+        tiers_list: [{"days_min": 0, "days_max": 120, "target_pnl": 0.5}, ...]
+        """
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("DELETE FROM exit_tiers")
+            for tier in tiers_list:
+                await db.execute(
+                    "INSERT INTO exit_tiers (days_min, days_max, target_pnl) VALUES (?, ?, ?)",
+                    (tier['days_min'], tier['days_max'], tier['target_pnl'])
+                )
+            await db.commit()
+
     async def get_open_positions(self):
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
