@@ -157,9 +157,7 @@ class Strategy:
             "Currency": "USD"
         }
         
-        # DEBUG: Print all available tags once to find the correct NetLiq tag
-        all_tags = [f"{v.tag}({v.currency})={v.value}" for v in acc_values]
-        logger.info(f"[DEBUG] All Account Tags: {all_tags}")
+        cashes_to_show = []
 
         for v in acc_values:
             # Check for multiple variations of Net Liquidity tags
@@ -176,6 +174,19 @@ class Strategy:
                     val = float(v.value)
                     if val != 0 and (v.currency in ['BASE', 'USD'] or summary['TotalCashValue'] == 0):
                         summary['TotalCashValue'] = val
+                    
+                    # Also collect individual currency balances for the holdings table
+                    if v.currency != 'BASE' and val != 0:
+                        cashes_to_show.append({
+                            "conId": 0,
+                            "symbol": f"CASH ({v.currency})",
+                            "secType": "CASH",
+                            "quantity": 1,
+                            "mktPrice": val,
+                            "mktValue": val,
+                            "unrealizedPnL": 0.0,
+                            "type": "CASH"
+                        })
                 except: pass
 
             if v.tag == 'BuyingPower': 
@@ -183,10 +194,9 @@ class Strategy:
                     summary['BuyingPower'] = float(v.value)
                 except: pass
 
-        logger.info(f"[Stats] Account Summary: NetLiq={summary['NetLiquidity']}, Cash={summary['TotalCashValue']}, BP={summary['BuyingPower']}")
         # 2. Positions
         positions = self.ib.positions()
-        holdings = []
+        holdings = cashes_to_show # Start with cash items
         
         # Enrich with DB data for tracked LEAPS
         db_positions = await self.db.get_open_positions()
