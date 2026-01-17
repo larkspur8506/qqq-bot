@@ -266,6 +266,7 @@ class Strategy:
         oldest_pos = sorted_pos[0]
         
         contract_id = int(oldest_pos['contract_id'])
+        quantity = int(oldest_pos['quantity'])
         logger.info(f"[ROLL] Replacing oldest position: ContractID {contract_id}")
 
         # 1. Sell Oldest
@@ -274,18 +275,19 @@ class Strategy:
         mid, _ = await execution.get_mid_price(self.ib, contract)
         
         if mid:
-            trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(oldest_pos['quantity']), mid)
+            trade = await execution.place_limit_order(self.ib, contract, 'SELL', quantity, mid)
             if trade and trade.orderStatus.status == 'Filled':
                  now = datetime.now(config.TIMEZONE)
                  await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'ROLL_EXIT')
                  logger.info(f"[ROLL] SELL SUCCESS for {contract.localSymbol}")
                  
                  # Record Profit
-                 await self.record_realized_profit(contract_id, float(oldest_pos['entry_price']), trade.orderStatus.avgFillPrice, int(oldest_pos['quantity']), trade.fills)
+                 await self.record_realized_profit(contract_id, float(oldest_pos['entry_price']), trade.orderStatus.avgFillPrice, quantity, trade.fills)
                  
                  # 2. Buy Replacement
                  # We trigger a normal entry search which will pick current best LEAP (lower strike now)
-                 await self.process_entry_signal()
+                 # Force=True to bypass one-trade-per-day check, and pass the original quantity
+                 await self.process_entry_signal(force=True, quantity=quantity)
                  
                  # Check for QQQM Auto-Invest
                  await self.check_and_invest_profits()
@@ -373,21 +375,25 @@ class Strategy:
                      await self.check_and_invest_profits()
                 return
 
-    async def process_entry_signal(self):
+    async def process_entry_signal(self, force=False, quantity=1):
         """
         Validates Entry:
-        1. One Trade Per Day check.
+        1. One Trade Per Day check (unless forced, e.g. during ROLL).
         2. Max Positions check.
         3. Find LEAPS.
         4. Execute.
         """
         # Global Checks
-        if await self.db.has_traded_today(config.SYMBOL, config.TIMEZONE):
+        if not force and await self.db.has_traded_today(config.SYMBOL, config.TIMEZONE):
             logger.info("[Entry] Skipped: Already traded today (One Trade Per Day Rule).")
             return
 
         open_positions = await self.db.get_open_positions()
         max_positions = self.settings['max_positions']
+        # If it's a ROLL rebalance, we check max_positions PLUS ONE because we just sold one
+        # but the DB might not have updated if there's a delay, OR we just want to ensure
+        # the slot we just vacated is available. Since we sold first, len(open_positions) 
+        # should already be below max_positions.
         if len(open_positions) >= max_positions:
             logger.info(f"[Entry] Skipped: Max positions reached ({len(open_positions)}/{max_positions}).")
             return
@@ -399,14 +405,12 @@ class Strategy:
             return
 
         # Execute
-        logger.info(f"[Entry] Attempting to BUY {contract.localSymbol}...")
+        logger.info(f"[Entry] Attempting to BUY {contract.localSymbol} (Qty: {quantity})...")
         # Get price for limit
         mid, _ = await execution.get_mid_price(self.ib, contract)
         if mid:
-            trade = await execution.place_limit_order(self.ib, contract, 'BUY', 1, mid)
+            trade = await execution.place_limit_order(self.ib, contract, 'BUY', quantity, mid)
             if trade:
-                 # We wait a bit or assume the execution module handles the wait. 
-                 # execution.place_limit_order waits for fill or cancel.
                  if trade.orderStatus.status == 'Filled':
                      now = datetime.now(config.TIMEZONE)
                      await self.db.save_trade({
@@ -414,7 +418,7 @@ class Strategy:
                         'symbol': config.SYMBOL, 
                         'entry_date': now, 
                         'entry_price': trade.orderStatus.avgFillPrice, 
-                        'quantity': 1
+                        'quantity': quantity
                      })
                      logger.info(f"[Entry] SUCCESS. Saved to DB.")
                  else:
