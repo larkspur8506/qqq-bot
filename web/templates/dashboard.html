@@ -322,11 +322,21 @@
             btn.innerText = '保存中...';
             const form = new FormData(e.target);
             let data = Object.fromEntries(form.entries());
-            if (data.entry_drop_pct) data.entry_drop_pct /= 100;
-            if (data.roll_drop_pct) data.roll_drop_pct /= 100;
-            if (data.max_option_spread) data.max_option_spread /= 100;
-            if (data.auto_invest_min_threshold) data.auto_invest_min_threshold = parseFloat(data.auto_invest_min_threshold);
-            if (data.time_exit_days) currentMaxHoldDays = data.time_exit_days = parseInt(data.time_exit_days);
+
+            // 数值类型显式转换，确保后端持久化类型正确
+            if (data.entry_drop_pct !== undefined) data.entry_drop_pct = parseFloat(data.entry_drop_pct) / 100;
+            if (data.roll_drop_pct !== undefined) data.roll_drop_pct = parseFloat(data.roll_drop_pct) / 100;
+            if (data.target_delta !== undefined) data.target_delta = parseFloat(data.target_delta);
+            if (data.delta_tolerance !== undefined) data.delta_tolerance = parseFloat(data.delta_tolerance);
+            if (data.max_option_spread !== undefined) data.max_option_spread = parseFloat(data.max_option_spread) / 100;
+            if (data.min_expiry_days !== undefined) data.min_expiry_days = parseInt(data.min_expiry_days);
+            if (data.max_positions !== undefined) data.max_positions = parseInt(data.max_positions);
+            if (data.time_exit_days !== undefined) {
+                data.time_exit_days = parseInt(data.time_exit_days);
+                currentMaxHoldDays = data.time_exit_days;
+            }
+            if (data.auto_invest_min_threshold !== undefined) data.auto_invest_min_threshold = parseFloat(data.auto_invest_min_threshold);
+            if (data.auto_invest_qqqm !== undefined) data.auto_invest_qqqm = parseInt(data.auto_invest_qqqm);
 
             try {
                 const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
