@@ -63,6 +63,16 @@ class Database:
                 )
             """)
             
+            # 5. System Alerts (For UI display)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS system_alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    level TEXT, -- 'INFO', 'WARN', 'ERROR'
+                    message TEXT
+                )
+            """)
+            
             await db.commit()
             await self._seed_defaults(db)
 
@@ -70,6 +80,8 @@ class Database:
         """Seeds default settings if they don't exist."""
         defaults = {
             'target_delta': ('0.6', 'float'),
+            'delta_tolerance': ('0.05', 'float'),
+            'max_option_spread': ('0.03', 'float'),
             'entry_drop_pct': ('-0.01', 'float'),
             'min_expiry_days': ('365', 'int'),
             'max_positions': ('3', 'int'),
@@ -231,3 +243,18 @@ class Database:
             async with db.execute("SELECT password_hash FROM admin_users WHERE username = ?", (username,)) as cursor:
                 row = await cursor.fetchone()
                 return row[0] if row else None
+
+    # --- System Alerts ---
+
+    async def add_alert(self, level, message):
+        """Logs a system message for the dashboard"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("INSERT INTO system_alerts (level, message) VALUES (?, ?)", (level, message))
+            await db.commit()
+
+    async def get_alerts(self, limit=10):
+        """Fetches recent system alerts"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT * FROM system_alerts ORDER BY timestamp DESC LIMIT ?", (limit,)) as cursor:
+                return [dict(row) for row in await cursor.fetchall()]

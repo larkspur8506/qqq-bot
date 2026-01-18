@@ -190,6 +190,12 @@ async def api_status():
         "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
+@app.get("/api/alerts")
+async def get_alerts(limit: int = 10):
+    """Returns recent system alerts for the UI"""
+    alerts = await bot_db.get_alerts(limit)
+    return {"alerts": alerts}
+
 @app.post("/api/settings")
 async def update_settings(data: dict):
     # data e.g. {"target_delta": 0.5}

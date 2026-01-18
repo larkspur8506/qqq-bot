@@ -95,7 +95,8 @@ class Strategy:
         self.settings['min_expiry_days'] = await self.db.get_setting('min_expiry_days', 365)
         self.settings['max_positions'] = await self.db.get_setting('max_positions', 3)
         self.settings['time_exit_days'] = await self.db.get_setting('time_exit_days', 270)
-        self.settings['delta_tolerance'] = await self.db.get_setting('delta_tolerance', 0.1)
+        self.settings['delta_tolerance'] = await self.db.get_setting('delta_tolerance', 0.05)
+        self.settings['max_option_spread'] = await self.db.get_setting('max_option_spread', 0.03)
         self.settings['roll_drop_pct'] = await self.db.get_setting('roll_drop_pct', -0.05)
         self.settings['leaps_realized_profit'] = await self.db.get_setting('leaps_realized_profit', 0.0)
         self.settings['qqqm_invested_capital'] = await self.db.get_setting('qqqm_invested_capital', 0.0)
@@ -427,109 +428,111 @@ class Strategy:
 
     async def find_leaps(self):
         """
-        Scans Option Chain for:
-        - Expiry > 365 days
-        - Delta ~ 0.6
+        Industrial Scanning for LEAPS:
+        1. All-strike Scan (No hardcoded anchors).
+        2. Greeks Retry Mechanism.
+        3. Mandatory Spread/Liquidity Filter (3%).
+        4. Delta Precision Filter (0.05).
         """
-        self.ib.reqMarketDataType(4) # Frozen/Delayed is fine for scanning, but we prefer 1 (Live) for execution
-        
-        # Get Chains
-        chains = await self.ib.reqSecDefOptParamsAsync(self.qqq_contract.symbol, '', self.qqq_contract.secType, self.qqq_contract.conId)
-        
-        # Filter for SMART exchange
-        smart_chains = [c for c in chains if c.exchange == 'SMART']
-        if not smart_chains: return None
-        chain = smart_chains[0]
-
-        # Filter Expirations > 365 days
-        now = datetime.now()
-        min_expiry = self.settings['min_expiry_days']
-        valid_expirations = []
-        for exp in chain.expirations:
-            # exp format YYYYMMDD
-            d = datetime.strptime(exp, '%Y%m%d')
-            if (d - now).days >= min_expiry:
-                valid_expirations.append(exp)
-        
-        if not valid_expirations:
-            logger.warning("[Scanner] No expirations > 365 days found.")
-            return None
-            
-        # Select the nearest valid expiration (shortest LEAP)
-        # Or farthest? Spec says "> 365". Usually we pick the one closest to 1 year or just the first one.
-        # Let's pick the first valid one to ensure liquidity
-        target_exp = sorted(valid_expirations)[0]
-        logger.info(f"[Scanner] Selected Expiry: {target_exp}")
-        
-        # Get Strikes and Deltas
-        # To get Delta, we need Option computation or just estimate ITM
-        # ib_insync has calculateImpliedVolatility or we can just fetch the chain
-        
-        # For simplicity and speed:
-        # A 0.6 Delta Call is ITM. QQQ Price * (1 - OTM%)?
-        # Roughly, 0.5 Delta is ATM. 0.6 Delta is slightly ITM.
-        # Let's request the Option Chain for this expiry.
-        
-        strikes = chain.strikes
-        # We need the underlying price to guess the strike range
-        ticker = self.ib.reqMktData(self.qqq_contract, '', True, False)
-        # Wait for tick
-        await asyncio.sleep(1)
-        ref_price = ticker.last if ticker.last else self.prev_close
-        
-        if not ref_price: return None
-
-        # Look for strikes slightly below current price (ITM)
-        # 0.6 Delta implies we are ITM. 
-        # Heuristic: Strike ~ 95% of Current Price usually gives ~0.6 Delta for LEAPS (very rough)
-        # Better: Request Greeks.
-        
-        # Let's construct a few contracts around 90-95% moneyness and ask for Greeks
-        target_strike = ref_price * 0.95
-        # Find closest strikes
-        closest_strikes = sorted(strikes, key=lambda x: abs(x - target_strike))[:5]
-        
-        candidates = []
-        for strike in closest_strikes:
-            contract = Contract(symbol=config.SYMBOL, secType='OPT', lastTradeDateOrContractMonth=target_exp, strike=strike, right='C', exchange='SMART')
-            await self.ib.qualifyContractsAsync(contract)
-            candidates.append(contract)
-            
-        # Request Data and Greeks for candidates
-        best_contract = None
-        min_delta_diff = 999
+        self.ib.reqMarketDataType(4) # Frozen/Delayed is fine for scanning
         
         target_delta = self.settings['target_delta']
-        delta_tolerance = self.settings['delta_tolerance']
+        tolerance = self.settings['delta_tolerance']
+        max_spread = self.settings['max_option_spread']
+        min_expiry = self.settings['min_expiry_days']
 
-        for contract in candidates:
-             # Requesting tick data with GenericTickList '100' (Option Volume), '101' (Open Interest), '106' (Implied Vol)
-             # But 'delta' comes with regular market data if possible or reqGreeks
-             # ib_insync Ticker has 'modelGreeks' if enabled
-             t = self.ib.reqMktData(contract, '13', True, False) # 13 = model greeks
-             
-             # Wait a moment
+        # Get Option Chain
+        chains = await self.ib.reqSecDefOptParamsAsync(self.qqq_contract.symbol, '', self.qqq_contract.secType, self.qqq_contract.conId)
+        smart_chains = [c for c in chains if c.exchange == 'SMART']
+        if not smart_chains: 
+            await self.db.add_alert('ERROR', "No SMART option chain found for QQQ")
+            return None
+        chain = smart_chains[0]
+
+        # Filter Expirations
+        now = datetime.now()
+        valid_exp = [e for e in chain.expirations if (datetime.strptime(e, '%Y%m%d') - now).days >= min_expiry]
+        if not valid_exp:
+            await self.db.add_alert('WARN', f"No expirations found > {min_expiry} days.")
+            return None
         
-        # Waiting for multiple tickers is tricky in a loop.
-        await asyncio.sleep(2)
+        target_exp = sorted(valid_exp)[0]
         
-        for contract in candidates:
-            # We need to find the ticker associated
-            t = self.ib.ticker(contract)
-            if t and t.modelGreeks and t.modelGreeks.delta:
-                delta = t.modelGreeks.delta
+        # Get All Strikes around ATM (100% price)
+        ticker = self.ib.reqMktData(self.qqq_contract, '', True, False)
+        await asyncio.sleep(1)
+        ref_price = ticker.last if ticker.last > 0 else (ticker.close if ticker.close > 0 else self.prev_close)
+        
+        # Select 30 strikes around ATM to find Delta anywhere from 0.2 to 0.8
+        all_strikes = sorted(chain.strikes)
+        closest_idx = min(range(len(all_strikes)), key=lambda i: abs(all_strikes[i] - ref_price))
+        search_strikes = all_strikes[max(0, closest_idx-15) : min(len(all_strikes), closest_idx+15)]
+        
+        candidates = []
+        for strike in search_strikes:
+            c = Contract(symbol=config.SYMBOL, secType='OPT', lastTradeDateOrContractMonth=target_exp, strike=strike, right='C', exchange='SMART')
+            candidates.append(c)
+        
+        qualified = await self.ib.qualifyContractsAsync(*candidates)
+        
+        # Request Data with Retries for Greeks
+        tickers = []
+        for c in qualified:
+            # 13: model greeks, 101: open interest
+            tickers.append(self.ib.reqMktData(c, '13,101', True, False))
+        
+        best_contract = None
+        min_delta_diff = 999
+        max_oi = -1
+
+        # Retry Loop for Greeks (3 times, 1s interval)
+        for attempt in range(3):
+            await asyncio.sleep(1.5)
+            logger.info(f"[Scanner] Greek Data Attempt {attempt+1}/3...")
+            
+            for t in tickers:
+                # 1. Delta Check
+                delta = None
+                if t.modelGreeks and t.modelGreeks.delta:
+                    delta = t.modelGreeks.delta
+                
+                if delta is None: continue
+                
                 diff = abs(delta - target_delta)
-                # Ensure it's positive delta for Call (it should be)
-                if diff < min_delta_diff and diff <= delta_tolerance:
-                     min_delta_diff = diff
-                     best_contract = contract
-                     logger.info(f"[Scanner] Found Candidate: {contract.localSymbol} (Delta={delta:.3f})")
+                if diff > tolerance: continue
+                
+                # 2. Spread Check (Liquidity Guard)
+                mid = (t.bid + t.ask) / 2 if (t.bid > 0 and t.ask > 0) else 0
+                if mid <= 0: continue
+                
+                spread_pct = (t.ask - t.bid) / mid
+                if spread_pct > max_spread:
+                    # Log once for awareness
+                    if attempt == 0:
+                        logger.debug(f"Skipping {t.contract.localSymbol}: Spread {spread_pct:.2%} > {max_spread:.2%}")
+                    continue
+                
+                # 3. Selection (Tie-break by Open Interest)
+                oi = t.openInterest or 0
+                if diff < min_delta_diff:
+                    min_delta_diff = diff
+                    best_contract = t.contract
+                    max_oi = oi
+                elif abs(diff - min_delta_diff) < 0.001: # Same delta diff, pick higher liquidity
+                    if oi > max_oi:
+                        best_contract = t.contract
+                        max_oi = oi
+            
+            if best_contract: break # Found one
 
-        if not best_contract and candidates:
-             # Fallback if Greeks fail: Pick the one closest to our heuristic strike
-             logger.warning("[Scanner] Greeks data unavailable. Using heuristic strike selection.")
-             best_contract = candidates[0]
-
+        # Final Decision
+        if not best_contract:
+            msg = f"Target Delta {target_delta} (±{tolerance}) unavailable. Safety/Liquidity Guard triggered."
+            logger.warning(f"[Scanner] {msg}")
+            await self.db.add_alert('WARN', msg)
+            return None
+            
+        logger.info(f"[Scanner] SELECTED: {best_contract.localSymbol} (Diff: {min_delta_diff:.4f}, OI: {max_oi})")
         return best_contract
 
     async def record_realized_profit(self, contract_id, entry_price, exit_price, quantity, fills):

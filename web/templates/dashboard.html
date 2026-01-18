@@ -9,9 +9,12 @@
     <!-- Fallback CDN for Chinese users (75cdn mirrors Google Fonts) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet">
     <!-- Backup CDN -->
-    <link href="https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/Variable/NotoSansCJK-VF.ttf" rel="preload" as="font" type="font/ttf" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/Variable/NotoSansCJK-VF.ttf" rel="preload"
+        as="font" type="font/ttf" crossorigin>
 
     <style>
         :root {
@@ -19,133 +22,118 @@
             --electric-orange: #ff6b00;
             --matrix-green: #00ff41;
             --crimson-red: #dc143c;
-            --bg-deep: #0a0a0a;
-            --bg-card: #111111;
-            --bg-input: #0f0f0f;
-            --border-dim: #333333;
+            --bg-deep: #050505;
+            --bg-card: #0a0a0a;
+            --bg-input: #020202;
+            --border-dim: #1f1f1f;
+            --border-glow: rgba(0, 240, 255, 0.1);
         }
 
         body {
             background-color: var(--bg-deep);
-            color: #e5e5e5;
-            /* Extended fallback stack for Chinese users */
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', 'Liberation Mono', 'Microsoft YaHei UI', monospace;
-            font-display: swap;
+            color: #d1d1d1;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
             overflow-x: hidden;
+            letter-spacing: -0.02em;
         }
 
-        h1, h2, h3, .header-font {
-            /* Extended fallback stack preserving industrial look */
-            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+        h1,
+        h2,
+        h3,
+        .header-font {
+            font-family: 'Rajdhani', sans-serif;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-display: swap;
+            font-weight: 700;
         }
 
-        /* Background Grid Pattern */
+        /* Base Grid & Grain */
         .grid-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(51, 51, 51, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(51, 51, 51, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
             z-index: -2;
             pointer-events: none;
         }
 
-        /* Scanline Effect */
-        .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                rgba(18, 16, 16, 0) 50%,
-                rgba(0, 0, 0, 0.1) 50%
-            ), linear-gradient(
-                90deg,
-                rgba(255, 0, 0, 0.03),
-                rgba(0, 255, 0, 0.01),
-                rgba(0, 0, 255, 0.03)
-            );
-            background-size: 100% 4px, 3px 100%;
-            z-index: -1;
-            pointer-events: none;
-            opacity: 0.3;
-        }
-
-        /* Grain Texture */
         .grain {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-            opacity: 0.05;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.08;
+            mix-blend-mode: overlay;
             z-index: -1;
             pointer-events: none;
         }
 
-        .brutalist-card {
-            background-color: var(--bg-card);
+        /* Industrial Panels */
+        .industrial-panel {
+            background: var(--bg-card);
             border: 1px solid var(--border-dim);
             position: relative;
-            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        .brutalist-card::before {
+        .industrial-panel::after {
             content: '';
             position: absolute;
-            top: -1px;
-            left: -1px;
-            width: 10px;
-            height: 10px;
-            border-top: 2px solid var(--neon-cyan);
-            border-left: 2px solid var(--neon-cyan);
+            bottom: -1px;
+            right: -1px;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, transparent 50%, var(--border-dim) 50%);
+            pointer-events: none;
         }
 
-        .brutalist-card.accent-orange::before {
-            border-top-color: var(--electric-orange);
-            border-left-color: var(--electric-orange);
+        .panel-header {
+            border-bottom: 2px solid var(--border-dim);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.02), transparent);
         }
 
-        .brutalist-card.accent-green::before {
-            border-top-color: var(--matrix-green);
-            border-left-color: var(--matrix-green);
+        .status-tag {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border: 1px solid currentColor;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
+        /* Inputs & Buttons */
         .brutalist-input {
+            background: var(--bg-input);
             border: 1px solid var(--border-dim);
-            background-color: var(--bg-input);
-            color: white;
-            padding: 0.5rem;
+            color: #fff;
+            padding: 0.6rem;
             width: 100%;
             outline: none;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            font-size: 0.85rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .brutalist-input:focus {
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            background: rgba(0, 240, 255, 0.02);
+            box-shadow: 0 0 15px var(--border-glow);
         }
 
-        .brutalist-button {
-            background-color: transparent;
+        .action-btn {
+            padding: 0.8rem 1.5rem;
+            background: transparent;
             border: 1px solid var(--neon-cyan);
             color: var(--neon-cyan);
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
-            font-weight: 700;
-            padding: 0.75rem 1.5rem;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -153,36 +141,54 @@
             justify-content: center;
         }
 
-        .brutalist-button:hover {
-            background-color: var(--neon-cyan);
-            color: black;
-            box-shadow: 0 0 15px var(--neon-cyan);
+        .action-btn:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
         }
 
-        .brutalist-button:active {
-            transform: scale(0.98);
+        .action-btn::before {
+            content: '>>';
+            position: absolute;
+            left: -20px;
+            opacity: 0;
+            transition: all 0.3s;
         }
 
-        .brutalist-button.btn-green {
-            border-color: var(--matrix-green);
+        .action-btn:hover::before {
+            left: 10px;
+            opacity: 0.5;
+        }
+
+        /* Data Effects */
+        .pnl-positive {
             color: var(--matrix-green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
         }
 
-        .brutalist-button.btn-green:hover {
-            background-color: var(--matrix-green);
-            color: black;
-            box-shadow: 0 0 15px var(--matrix-green);
+        .pnl-negative {
+            color: var(--crimson-red);
+            text-shadow: 0 0 10px rgba(220, 20, 60, 0.2);
         }
 
-        .brutalist-button.btn-orange {
-            border-color: var(--electric-orange);
-            color: var(--electric-orange);
+        /* Staggered Animations */
+        @keyframes slideReveal {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+                filter: blur(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+                filter: blur(0);
+            }
         }
 
-        .brutalist-button.btn-orange:hover {
-            background-color: var(--electric-orange);
-            color: black;
-            box-shadow: 0 0 15px var(--electric-orange);
+        .reveal {
+            opacity: 0;
+            animation: slideReveal 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
 
         /* Custom Table Styling */
@@ -207,43 +213,27 @@
             background-color: rgba(255, 255, 255, 0.03);
         }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .staggered-reveal > * {
-            opacity: 0;
-            animation: fadeIn 0.5s ease forwards;
-        }
-
-        .staggered-reveal > *:nth-child(1) { animation-delay: 0.1s; }
-        .staggered-reveal > *:nth-child(2) { animation-delay: 0.2s; }
-        .staggered-reveal > *:nth-child(3) { animation-delay: 0.3s; }
-        .staggered-reveal > *:nth-child(4) { animation-delay: 0.4s; }
-        .staggered-reveal > *:nth-child(5) { animation-delay: 0.5s; }
-
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .pulse-status {
-            animation: pulse 2s infinite ease-in-out;
-        }
-
         /* Angled Corners with clip-path */
         .angle-top-right {
             clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-deep); }
-        ::-webkit-scrollbar-thumb { background: var(--border-dim); }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #222;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-cyan);
+        }
 
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
@@ -264,17 +254,15 @@
                 const connDot = document.getElementById('conn-dot');
                 const connText = document.getElementById('conn-text');
                 if (data.connected) {
-                    connDot.classList.remove('bg-[#dc143c]');
-                    connDot.classList.add('bg-[#00ff41]');
-                    connText.innerText = '已连接';
-                    connText.classList.add('text-[#00ff41]');
-                    connText.classList.remove('text-[#dc143c]');
+                    connDot.style.backgroundColor = 'var(--matrix-green)';
+                    connDot.style.boxShadow = '0 0 10px var(--matrix-green)';
+                    connText.innerText = '终端网络在线';
+                    connText.style.color = 'var(--matrix-green)';
                 } else {
-                    connDot.classList.remove('bg-[#00ff41]');
-                    connDot.classList.add('bg-[#dc143c]');
-                    connText.innerText = '离线';
-                    connText.classList.add('text-[#dc143c]');
-                    connText.classList.remove('text-[#00ff41]');
+                    connDot.style.backgroundColor = 'var(--crimson-red)';
+                    connDot.style.boxShadow = '0 0 10px var(--crimson-red)';
+                    connText.innerText = '终端网络断开';
+                    connText.style.color = 'var(--crimson-red)';
                 }
 
                 // Positions Table
@@ -293,7 +281,7 @@
                             <td class="p-4 font-mono">$${pos.entry_price.toFixed(2)}</td>
                             <td class="p-4 font-mono">${pos.quantity}</td>
                             <td class="p-4 font-mono text-gray-600">--</td> 
-                            <td class="p-4"><span class="border border-[#00ff41] text-[#00ff41] px-2 py-0.5 text-[10px] font-bold uppercase">持仓中</span></td>
+                            <td class="p-4"><span class="border border-matrix-green text-matrix-green px-2 py-0.5 text-[10px] font-bold uppercase">运行中</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -305,6 +293,8 @@
                     bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
                     bf.roll_drop_pct.value = (data.settings.roll_drop_pct * 100).toFixed(2);
                     bf.target_delta.value = data.settings.target_delta;
+                    bf.delta_tolerance.value = data.settings.delta_tolerance;
+                    bf.max_option_spread.value = (data.settings.max_option_spread * 100).toFixed(0);
                     bf.min_expiry_days.value = data.settings.min_expiry_days;
                     bf.max_positions.value = data.settings.max_positions;
                     bf.dataset.filled = "true";
@@ -504,6 +494,27 @@
             }
         }
 
+        async function fetchAlerts() {
+            try {
+                const res = await fetch('/api/alerts');
+                const data = await res.json();
+                const container = document.getElementById('alerts-container');
+                if (data.alerts && data.alerts.length > 0) {
+                    container.innerHTML = '';
+                    data.alerts.forEach(alert => {
+                        const div = document.createElement('div');
+                        const levelColor = alert.level === 'ERROR' ? 'text-crimson-red' : (alert.level === 'WARN' ? 'text-electric-orange' : 'text-neon-cyan');
+                        const timeStr = alert.timestamp.includes(' ') ? alert.timestamp.split(' ')[1] : (alert.timestamp.includes('T') ? alert.timestamp.split('T')[1].split('.')[0] : alert.timestamp);
+                        div.className = "py-1.5 border-b border-white/[0.03] last:border-0";
+                        div.innerHTML = `<span class="text-white/20 mr-2">${timeStr}</span> 
+                                         <span class="${levelColor} font-black">[${alert.level}]</span> 
+                                         <span class="text-white/60 ml-2">${alert.message}</span>`;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
         async function saveBuySettings(e) {
             e.preventDefault();
             const form = new FormData(e.target);
@@ -511,11 +522,13 @@
             if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct) / 100;
             if (data.roll_drop_pct) data.roll_drop_pct = parseFloat(data.roll_drop_pct) / 100;
             if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
+            if (data.delta_tolerance) data.delta_tolerance = parseFloat(data.delta_tolerance);
+            if (data.max_option_spread) data.max_option_spread = parseFloat(data.max_option_spread) / 100;
             if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
 
             const btn = document.getElementById('save-buy-btn');
-            const originalText = '更新买入配置';
+            const originalText = '[ 同步配置协议 ]';
             btn.innerText = '执行中...';
             const res = await fetch('/api/settings', {
                 method: 'POST',
@@ -525,8 +538,8 @@
             if (res.ok) {
                 btn.innerText = '已保存';
                 setTimeout(() => btn.innerText = originalText, 2000);
-            } else { 
-                btn.innerText = '保存失败'; 
+            } else {
+                btn.innerText = '保存失败';
                 setTimeout(() => btn.innerText = originalText, 2000);
             }
         }
@@ -542,7 +555,7 @@
             }
 
             const btn = document.getElementById('save-sell-btn');
-            const originalText = '更新卖出配置';
+            const originalText = '[ 更新卖出逻辑 ]';
             btn.innerText = '执行中...';
             const res = await fetch('/api/settings', {
                 method: 'POST',
@@ -552,17 +565,19 @@
             if (res.ok) {
                 btn.innerText = '已保存';
                 setTimeout(() => btn.innerText = originalText, 2000);
-            } else { 
-                btn.innerText = '保存失败'; 
+            } else {
+                btn.innerText = '保存失败';
                 setTimeout(() => btn.innerText = originalText, 2000);
             }
         }
 
         setInterval(fetchStatus, 3000);
+        setInterval(fetchAlerts, 5000);
 
         window.onload = function () {
             fetchStatus();
             fetchExitTiers();
+            fetchAlerts();
 
             async function saveProfitSettings(e) {
                 e.preventDefault();
@@ -573,7 +588,7 @@
                 };
 
                 const btn = document.getElementById('save-profit-btn');
-                const originalText = '更新循环参数';
+                const originalText = '[ 同步循环参数 ]';
                 btn.innerText = '写入中...';
 
                 try {
@@ -611,236 +626,272 @@
 
 <body>
     <div class="grid-bg"></div>
-    <div class="scanlines"></div>
     <div class="grain"></div>
 
-    <!-- Top Navigation -->
-    <nav class="border-b border-[#333] bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
+    <!-- Navigation Overlay -->
+    <nav class="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-                <div class="bg-[#00f0ff] text-black px-3 py-1 font-bold angle-top-right text-lg">
-                    QQQ LEAPS | 控制终端 v2.1
+            <div class="flex items-center space-x-8">
+                <div class="header-font text-white text-xl tracking-tighter flex items-center">
+                    <span class="text-neon-cyan mr-2">//</span> QQQ LEAPS 战略终端
+                    <span class="ml-3 text-[10px] bg-white/10 px-2 py-0.5 font-bold rounded">V2.5</span>
                 </div>
-                <div class="flex items-center space-x-3 border-l border-[#333] pl-6">
-                    <div id="conn-dot" class="w-2.5 h-2.5 bg-[#dc143c] pulse-status"></div>
-                    <span id="conn-text" class="text-[10px] font-bold tracking-[0.2em] text-[#dc143c]">离线</span>
+                <div class="flex items-center space-x-4 border-l border-white/10 pl-8">
+                    <div id="conn-dot"
+                        class="w-2 h-2 rounded-full bg-crimson-red shadow-[0_0_10px_rgba(220,20,60,0.5)]"></div>
+                    <span id="conn-text"
+                        class="text-[9px] font-black uppercase tracking-widest text-crimson-red">终端离线</span>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <div class="hidden md:block text-[10px] text-gray-500 font-bold tracking-widest uppercase">
-                    系统时间: <span id="sys-time" class="text-gray-400">00:00:00</span>
+            <div class="flex items-center space-x-6">
+                <div class="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+                    同步时间: <span id="sys-time" class="text-white/60">00:00:00</span>
                 </div>
                 <form action="/logout" method="POST" class="m-0">
-                    <button class="text-[10px] border border-[#333] px-4 py-1.5 hover:bg-[#dc143c] hover:border-[#dc143c] hover:text-white transition-all duration-300 font-bold uppercase tracking-widest">
-                        终止会话
+                    <button
+                        class="text-[9px] font-black uppercase tracking-[0.3em] hover:text-neon-cyan transition-colors">
+                        [ 终止会话_Terminate ]
                     </button>
                 </form>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto p-6 space-y-8 staggered-reveal">
-        <!-- Summary Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="brutalist-card p-6">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">资产净值</div>
-                <div id="net-liq" class="text-2xl font-bold text-[#00f0ff] font-mono">$0.00</div>
-                <div class="mt-2 h-0.5 bg-[#333] w-full relative">
-                    <div class="absolute top-0 left-0 h-full bg-[#00f0ff] w-1/3 opacity-30"></div>
+    <div class="container mx-auto p-6 space-y-10">
+        <!-- Summary Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="industrial-panel p-5 reveal" style="animation-delay: 0.1s">
+                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
+                    资产净值 <span class="text-neon-cyan">01</span>
+                </div>
+                <div id="net-liq" class="text-3xl font-bold tracking-tighter text-white font-mono">$0,000.00</div>
+                <div class="mt-4 h-1 bg-white/5 w-full">
+                    <div class="h-full bg-neon-cyan w-1/3 shadow-[0_0_10px_var(--neon-cyan)] opacity-50"></div>
                 </div>
             </div>
-            <div class="brutalist-card accent-green p-6">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">现金余额</div>
-                <div id="cash-balance" class="text-2xl font-bold text-[#00ff41] font-mono">$0.00</div>
-                <div class="mt-2 h-0.5 bg-[#333] w-full relative">
-                    <div class="absolute top-0 left-0 h-full bg-[#00ff41] w-1/2 opacity-30"></div>
+            <div class="industrial-panel p-5 reveal border-l-matrix-green/50" style="animation-delay: 0.2s">
+                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
+                    可用现金 <span class="text-matrix-green">02</span>
+                </div>
+                <div id="cash-balance" class="text-3xl font-bold tracking-tighter text-matrix-green font-mono">$0,000.00
+                </div>
+                <div class="mt-4 h-1 bg-white/5 w-full">
+                    <div class="h-full bg-matrix-green w-1/2 shadow-[0_0_10px_var(--matrix-green)] opacity-50"></div>
                 </div>
             </div>
-            <div class="brutalist-card p-6 border-l-4 border-l-[#a855f7]">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">利润池 (可用)</div>
-                <div id="profit-pool" class="text-2xl font-bold text-[#a855f7] font-mono">$0.00</div>
-                <div id="invested-info" class="text-[9px] text-gray-600 mt-2 font-bold uppercase truncate tracking-tighter">已投: $0.00 / 总计: $0.00</div>
+            <div class="industrial-panel p-5 reveal border-l-electric-orange/50" style="animation-delay: 0.3s">
+                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
+                    当前购买力 <span class="text-electric-orange">03</span>
+                </div>
+                <div id="buying-power" class="text-3xl font-bold tracking-tighter text-electric-orange font-mono">
+                    $0,000.00</div>
+                <div class="mt-4 h-1 bg-white/5 w-full">
+                    <div class="h-full bg-electric-orange w-2/3 shadow-[0_0_10px_var(--electric-orange)] opacity-50">
+                    </div>
+                </div>
             </div>
-            <div class="brutalist-card accent-orange p-6">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">购买力</div>
-                <div id="buying-power" class="text-2xl font-bold text-[#ff6b00] font-mono">$0.00</div>
-                <div class="mt-2 h-0.5 bg-[#333] w-full relative">
-                    <div class="absolute top-0 left-0 h-full bg-[#ff6b00] w-2/3 opacity-30"></div>
+            <div class="industrial-panel p-5 reveal" style="animation-delay: 0.4s; border-left: 2px solid #a855f7;">
+                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
+                    利润池 (定投) <span class="text-[#a855f7]">04</span>
+                </div>
+                <div id="profit-pool" class="text-3xl font-bold tracking-tighter text-white font-mono">$0.00</div>
+                <div id="invested-info" class="text-[8px] font-bold text-white/20 mt-2 uppercase">追踪状态: 等待中
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Column: Position Tables -->
+            <!-- Left: Strategic Data -->
             <div class="lg:col-span-2 space-y-8">
-                <!-- LEAPS Strategy Positions -->
-                <div class="brutalist-card border-l-0 overflow-hidden">
-                    <div class="p-4 bg-[#1a1a1a] border-b border-[#333] flex justify-between items-center">
-                        <h2 class="text-lg font-bold flex items-center">
-                            <span class="w-1.5 h-1.5 bg-[#00f0ff] mr-3"></span>
-                            LEAPS 核心策略
+                <div class="industrial-panel reveal" style="animation-delay: 0.5s">
+                    <div class="panel-header">
+                        <h2 class="text-sm font-black flex items-center tracking-widest">
+                            <span class="w-1.5 h-1.5 bg-neon-cyan mr-3 rotate-45"></span>
+                            核心策略持仓 (LEAPS)
                         </h2>
-                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">实时追踪</span>
+                        <div class="status-tag pnl-positive">运行中</div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
-                            <thead class="bg-[#0f0f0f]">
+                            <thead class="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40">
                                 <tr>
-                                    <th class="p-4">代码</th>
-                                    <th class="p-4">合约 ID</th>
-                                    <th class="p-4">开仓日期</th>
-                                    <th class="p-4">开仓价</th>
-                                    <th class="p-4">数量</th>
-                                    <th class="p-4">未实现盈亏</th>
+                                    <th class="p-4 border-r border-white/5">代码</th>
+                                    <th class="p-4 border-r border-white/5">合约ID</th>
+                                    <th class="p-4 border-r border-white/5">买入日期</th>
+                                    <th class="p-4 border-r border-white/5">开仓价格</th>
+                                    <th class="p-4 border-r border-white/5">数量</th>
+                                    <th class="p-4 border-r border-white/5">未实现盈亏</th>
                                     <th class="p-4">状态</th>
                                 </tr>
                             </thead>
-                            <tbody id="pos-body" class="text-sm">
-                                <!-- Data injected via JS -->
+                            <tbody id="pos-body" class="text-[11px] font-mono">
+                                <!-- Data -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Portfolio Overview -->
-                <div class="brutalist-card border-l-0 overflow-hidden">
-                    <div class="p-4 bg-[#1a1a1a] border-b border-[#333] flex justify-between items-center">
-                        <h2 class="text-lg font-bold flex items-center">
-                            <span class="w-1.5 h-1.5 bg-[#ff6b00] mr-3"></span>
-                            综合持仓
+                <div class="industrial-panel reveal" style="animation-delay: 0.6s">
+                    <div class="panel-header">
+                        <h2 class="text-sm font-black flex items-center tracking-widest">
+                            <span class="w-1.5 h-1.5 bg-electric-orange mr-3 rotate-45"></span>
+                            账户综合资产报告
                         </h2>
-                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">全账户</span>
                     </div>
-                    <div class="overflow-x-auto max-h-[400px]">
+                    <div class="overflow-x-auto custom-scrollbar" style="max-height: 400px;">
                         <table class="w-full text-left">
-                            <thead class="bg-[#0f0f0f] sticky top-0 z-10">
+                            <thead
+                                class="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 sticky top-0 z-10">
                                 <tr>
-                                    <th class="p-4">代码</th>
+                                    <th class="p-4">资产名</th>
                                     <th class="p-4">类型</th>
-                                    <th class="p-4">数量</th>
-                                    <th class="p-4">现价</th>
-                                    <th class="p-4">浮盈</th>
+                                    <th class="p-4 text-center">持仓量</th>
+                                    <th class="p-4 text-center">当前价格</th>
+                                    <th class="p-4">盈亏</th>
                                     <th class="p-4 text-right">市值</th>
                                 </tr>
                             </thead>
-                            <tbody id="portfolio-body" class="text-sm">
-                                <!-- Data injected via JS -->
+                            <tbody id="portfolio-body" class="text-[11px] font-mono">
+                                <!-- Data -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Settings Panels -->
+            <!-- Right: Command & Control -->
             <div class="space-y-8">
-                <!-- Buy Protocol Settings -->
-                <div class="brutalist-card p-6 border-l-4 border-l-[#00f0ff]">
-                    <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
-                        买入/ROLL 条件
+                <div class="industrial-panel p-6 reveal border-l-2 border-neon-cyan" style="animation-delay: 0.7s">
+                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4">
+                        买入/ROLL 核心配置
                     </h2>
-                    <form id="buy-form" class="space-y-5">
+                    <form id="buy-form" class="space-y-6">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">入场跌幅 (%)</label>
-                                <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off" class="brutalist-input text-[#00f0ff]">
+                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">入场跌幅 %</label>
+                                <input name="entry_drop_pct" type="number" step="0.1"
+                                    class="brutalist-input border-neon-cyan/20">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">ROLL 跌幅 (%)</label>
-                                <input name="roll_drop_pct" type="number" step="0.1" autocomplete="off" class="brutalist-input text-[#a855f7]">
+                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">ROLL 跌幅 %</label>
+                                <input name="roll_drop_pct" type="number" step="0.1"
+                                    class="brutalist-input border-electric-orange/20">
                             </div>
                         </div>
-                        
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">目标 Delta</label>
+                                <input name="target_delta" type="number" step="0.01" class="brutalist-input">
+                            </div>
+                            <div>
+                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">Delta 容错率</label>
+                                <input name="delta_tolerance" type="number" step="0.01" class="brutalist-input">
+                            </div>
+                        </div>
+
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">目标 Delta</label>
-                            <input name="target_delta" type="number" step="0.01" autocomplete="off" class="brutalist-input">
+                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">最大买入价差 %
+                                (流动性守卫)</label>
+                            <input name="max_option_spread" type="number" step="1" class="brutalist-input">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">最小到期天数</label>
-                                <input name="min_expiry_days" type="number" autocomplete="off" class="brutalist-input">
+                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">最小到期天数</label>
+                                <input name="min_expiry_days" type="number" class="brutalist-input">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">最大持仓</label>
-                                <input name="max_positions" type="number" autocomplete="off" class="brutalist-input">
+                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">最大持仓笔数</label>
+                                <input name="max_positions" type="number" class="brutalist-input">
                             </div>
                         </div>
 
-                        <p class="text-[9px] text-gray-600 font-bold uppercase leading-relaxed italic border-l-2 border-[#333] pl-3 py-1">
-                            注：当达到最大持仓时，ROLL 协议将触发 FIFO（先进先出）平仓并立即替换。
-                        </p>
-
-                        <button id="save-buy-btn" type="submit" class="brutalist-button w-full mt-4">
-                            更新买入配置
+                        <button id="save-buy-btn" type="submit" class="action-btn w-full py-4 mt-2">
+                            [ 同步配置协议 ]
                         </button>
                     </form>
                 </div>
 
                 <!-- Sell & Tier Settings -->
-                <div class="brutalist-card p-6 border-l-4 border-l-[#dc143c]">
-                    <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
-                        卖出条件
+                <div class="industrial-panel p-6 reveal border-l-2 border-crimson-red" style="animation-delay: 0.8s">
+                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4">
+                        止盈与调仓风控
                     </h2>
-                    <form id="sell-form" class="space-y-4 mb-8">
+                    <form id="sell-form" class="space-y-6 mb-10">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">强制平仓天数</label>
-                            <input name="time_exit_days" type="number" autocomplete="off" class="brutalist-input border-[#dc143c]/50">
-                            <p class="text-[9px] text-gray-600 mt-2 font-bold uppercase tracking-tighter">到达期限限制时将自动平仓。</p>
+                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">强制平仓天数
+                                (Force_Exit)</label>
+                            <input name="time_exit_days" type="number" class="brutalist-input border-crimson-red/20">
+                            <p class="text-[8px] text-white/20 mt-2 uppercase font-black">到达天数阈值后将自动市价平仓。</p>
                         </div>
-                        <button id="save-sell-btn" type="submit" class="brutalist-button btn-orange w-full">
-                            更新卖出配置
+                        <button id="save-sell-btn" type="submit"
+                            class="action-btn w-full border-crimson-red text-crimson-red hover:bg-crimson-red">
+                            [ 更新卖出逻辑 ]
                         </button>
                     </form>
 
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center border-b border-[#333] pb-2">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">收益梯度</h3>
-                            <button onclick="addTierRow()" class="text-[10px] bg-[#333] hover:bg-[#444] text-white px-3 py-1 font-bold uppercase tracking-widest transition-colors">
-                                + 添加梯度
+                        <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                            <h3 class="text-[10px] font-black text-white/60 uppercase tracking-widest">阶梯止盈协议
+                                (Profit_Tiers)</h3>
+                            <button onclick="addTierRow()"
+                                class="text-[9px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 font-bold uppercase transition-colors border border-white/10">
+                                + 增加阶梯
                             </button>
                         </div>
-                        <table class="w-full text-xs">
+                        <table class="w-full text-[10px] font-mono">
                             <thead>
-                                <tr class="text-left">
+                                <tr class="text-left text-white/30 uppercase">
                                     <th class="p-2 pl-0">天数范围</th>
                                     <th class="p-2">目标盈亏 %</th>
                                     <th class="p-2"></th>
                                 </tr>
                             </thead>
                             <tbody id="tiers-body">
-                                <!-- Tier rows injected via JS -->
+                                <!-- Data -->
                             </tbody>
                         </table>
-                        <button id="save-tiers-btn" onclick="saveExitTiers()" class="brutalist-button btn-green w-full text-xs">
-                            保存梯度
+                        <button id="save-tiers-btn" onclick="saveExitTiers()"
+                            class="action-btn w-full border-matrix-green text-matrix-green hover:bg-matrix-green py-2 text-[10px]">
+                            [ 部署阶梯配置 ]
                         </button>
                     </div>
                 </div>
 
                 <!-- Profit Recycling -->
-                <div class="brutalist-card p-6 border-l-4 border-l-[#a855f7]">
-                    <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
-                        利润循环设置
+                <div class="industrial-panel p-6 reveal border-l-2 border-[#a855f7]" style="animation-delay: 0.9s">
+                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4">
+                        利润定投枢纽
                     </h2>
-                    <form id="profit-form" class="space-y-5">
+                    <form id="profit-form" class="space-y-6">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">自动定投 QQQM</label>
+                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">自动定投 QQQM</label>
                             <select name="auto_invest_qqqm" class="brutalist-input appearance-none cursor-pointer">
-                                <option value="0">已禁用</option>
-                                <option value="1">已启用</option>
+                                <option value="0">// 模块已禁用</option>
+                                <option value="1">// 循环模式已开启</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">起投阈值 ($)</label>
-                            <input name="auto_invest_min_threshold" type="number" step="10" placeholder="500" class="brutalist-input">
+                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">定投资金阈值 ($)</label>
+                            <input name="auto_invest_min_threshold" type="number" step="10" class="brutalist-input">
                         </div>
-                        <p class="text-[9px] text-gray-600 font-bold uppercase leading-relaxed italic border-l-2 border-[#333] pl-3 py-1">
-                            已实现 LEAPS 利润超过阈值时自动部署到 QQQM 现货持仓。
-                        </p>
-                        <button id="save-profit-btn" type="submit" class="brutalist-button w-full mt-4" style="border-color: #a855f7; color: #a855f7;">
-                            更新循环参数
+                        <button id="save-profit-btn" type="submit"
+                            class="action-btn w-full border-[#a855f7] text-[#a855f7] hover:bg-[#a855f7]">
+                            [ 同步循环参数 ]
                         </button>
                     </form>
+                </div>
+
+                <!-- System Notifications -->
+                <div class="industrial-panel p-6 reveal border-l-2 border-white/10" style="animation-delay: 1s">
+                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4 text-white/60">
+                        通讯链路系统报警
+                    </h2>
+                    <div id="alerts-container"
+                        class="space-y-1 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar font-mono text-[9px]">
+                        <div class="text-white/20 italic py-2 uppercase">正在建立通讯链接...</div>
+                    </div>
                 </div>
             </div>
         </div>
