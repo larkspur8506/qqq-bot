@@ -499,20 +499,27 @@
                 const res = await fetch('/api/alerts');
                 const data = await res.json();
                 const container = document.getElementById('alerts-container');
-                if (data.alerts && data.alerts.length > 0) {
-                    container.innerHTML = '';
-                    data.alerts.forEach(alert => {
-                        const div = document.createElement('div');
-                        const levelColor = alert.level === 'ERROR' ? 'text-crimson-red' : (alert.level === 'WARN' ? 'text-electric-orange' : 'text-neon-cyan');
-                        const timeStr = alert.timestamp.includes(' ') ? alert.timestamp.split(' ')[1] : (alert.timestamp.includes('T') ? alert.timestamp.split('T')[1].split('.')[0] : alert.timestamp);
-                        div.className = "py-1.5 border-b border-white/[0.03] last:border-0";
-                        div.innerHTML = `<span class="text-white/20 mr-2">${timeStr}</span> 
-                                         <span class="${levelColor} font-black">[${alert.level}]</span> 
-                                         <span class="text-white/60 ml-2">${alert.message}</span>`;
-                        container.appendChild(div);
-                    });
+
+                if (!data.alerts || data.alerts.length === 0) {
+                    container.innerHTML = '<div class="text-white/20 italic py-2 uppercase">通讯链路正常: 暂无系统警报</div>';
+                    return;
                 }
-            } catch (e) { console.error(e); }
+
+                container.innerHTML = '';
+                data.alerts.forEach(alert => {
+                    const div = document.createElement('div');
+                    const levelColor = alert.level === 'ERROR' ? 'text-crimson-red' : (alert.level === 'WARN' ? 'text-electric-orange' : 'text-neon-cyan');
+                    const timeStr = alert.timestamp.includes(' ') ? alert.timestamp.split(' ')[1] : (alert.timestamp.includes('T') ? alert.timestamp.split('T')[1].split('.')[0] : alert.timestamp);
+                    div.className = "py-1.5 border-b border-white/[0.03] last:border-0";
+                    div.innerHTML = `<span class="text-white/20 mr-2">${timeStr}</span> 
+                                     <span class="${levelColor} font-black">[${alert.level}]</span> 
+                                     <span class="text-white/60 ml-2">${alert.message}</span>`;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                console.error(e);
+                document.getElementById('alerts-container').innerHTML = '<div class="text-crimson-red italic py-2 uppercase">通讯链路异常: 无法连接 API</div>';
+            }
         }
 
         async function saveBuySettings(e) {
