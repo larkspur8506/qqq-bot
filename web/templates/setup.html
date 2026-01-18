@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM INITIALIZATION | QQQ LEAPS BOT</title>
+    <title>系统初始化 | QQQ LEAPS Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +116,7 @@
         }
 
         .info-box::after {
-            content: "STATUS: READY";
+            content: "状态: 就绪";
             position: absolute;
             top: -10px;
             right: 10px;
@@ -132,7 +132,7 @@
             color: var(--bg);
             border: none;
             padding: 18px;
-            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', system-ui, sans-serif;
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', 'Noto Sans SC', system-ui, sans-serif;
             font-weight: 700;
             font-size: 18px;
             text-transform: uppercase;
@@ -195,7 +195,7 @@
         }
 
         .glitch-text::before {
-            content: "SYSTEM INITIALIZATION";
+            content: "系统初始化";
             position: absolute;
             top: 0;
             left: 0;
@@ -230,38 +230,38 @@
 
     <main class="brutalist-container">
         <div class="title-wrapper">
-            <h1 class="text-4xl font-bold glitch-text">SYSTEM INITIALIZATION</h1>
-            <p class="text-[10px] mt-2 text-gray-400 opacity-70">SECURITY LEVEL: ALPHA-01 // NO ADMIN DETECTED</p>
+            <h1 class="text-4xl font-bold glitch-text">系统初始化</h1>
+            <p class="text-[10px] mt-2 text-gray-400 opacity-70">安全等级: ALPHA-01 // 未检测到管理员</p>
         </div>
 
         <form action="/setup" method="POST">
             <div class="input-group">
-                <label for="username">Root Identifier</label>
-                <input type="text" id="username" name="username" placeholder="ADMIN_USER" required autofocus>
+                <label for="username">管理员用户名</label>
+                <input type="text" id="username" name="username" placeholder="管理员用户名" required autofocus>
             </div>
 
             <div class="input-group">
-                <label for="password">Access Keyphrase</label>
+                <label for="password">访问密码</label>
                 <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
 
             <div class="info-box">
                 <p>
-                    <span class="font-bold">[SECURITY NOTICE]</span><br>
-                    CREDENTIALS WILL BE ENCRYPTED USING BCRYPT HASHING PROTOCOL. 
-                    CORE DATABASE IS MAPPED TO LOCAL DOCKER VOLUME <code>/data</code>. 
-                    ENSURE VOLUME PERSISTENCE BEFORE DEPLOYMENT.
+                    <span class="font-bold">[安全提示]</span><br>
+                    身份凭据将使用 BCRYPT 哈希协议进行加密处理。
+                    核心数据库已映射至本地 Docker 卷 <code>/data</code>。
+                    请在部署前确保数据卷的持久化配置已就绪。
                 </p>
             </div>
 
             <button type="submit" class="btn-initialize">
-                Establish Protocol
+                初始化系统
             </button>
         </form>
 
         <div class="mt-8 flex justify-between items-center opacity-30 text-[10px]">
             <span>QQQ-LEAPS-V2.1</span>
-            <span>TERMINAL: AUTH_READY</span>
+            <span>终端: 认证就绪</span>
         </div>
     </main>
 </body>

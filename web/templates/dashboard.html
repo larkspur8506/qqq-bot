@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q-LEAPS | TERMINAL v2.1</title>
+    <title>QQQ LEAPS | 控制终端 v2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fallback CDN for Chinese users (75cdn mirrors Google Fonts) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -266,13 +266,13 @@
                 if (data.connected) {
                     connDot.classList.remove('bg-[#dc143c]');
                     connDot.classList.add('bg-[#00ff41]');
-                    connText.innerText = 'CONNECTED';
+                    connText.innerText = '已连接';
                     connText.classList.add('text-[#00ff41]');
                     connText.classList.remove('text-[#dc143c]');
                 } else {
                     connDot.classList.remove('bg-[#00ff41]');
                     connDot.classList.add('bg-[#dc143c]');
-                    connText.innerText = 'DISCONNECTED';
+                    connText.innerText = '离线';
                     connText.classList.add('text-[#dc143c]');
                     connText.classList.remove('text-[#00ff41]');
                 }
@@ -281,7 +281,7 @@
                 const tbody = document.getElementById('pos-body');
                 tbody.innerHTML = '';
                 if (!data.positions || data.positions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-600 italic uppercase tracking-widest">No Active Positions Detected</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-600 italic uppercase tracking-widest">暂无活跃持仓</td></tr>';
                 } else {
                     data.positions.forEach(pos => {
                         const tr = document.createElement('tr');
@@ -293,7 +293,7 @@
                             <td class="p-4 font-mono">$${pos.entry_price.toFixed(2)}</td>
                             <td class="p-4 font-mono">${pos.quantity}</td>
                             <td class="p-4 font-mono text-gray-600">--</td> 
-                            <td class="p-4"><span class="border border-[#00ff41] text-[#00ff41] px-2 py-0.5 text-[10px] font-bold uppercase">Holding</span></td>
+                            <td class="p-4"><span class="border border-[#00ff41] text-[#00ff41] px-2 py-0.5 text-[10px] font-bold uppercase">持仓中</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -322,8 +322,8 @@
                     const profit = data.stats.leaps_realized_profit || 0;
                     const invested = data.stats.qqqm_invested_capital || 0;
                     const available = profit - invested;
-                    document.getElementById('profit-pool').innerText = `$${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    document.getElementById('invested-info').innerText = `INVESTED: $${invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / TOTAL: $${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('profit-pool').innerText = `$${available.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('invested-info').innerText = `已投: $${invested.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / 总计: $${profit.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 }
 
                 // Fill Account Summary
@@ -464,7 +464,7 @@
 
                 if (min >= currentMaxHoldDays) {
                     row.classList.add('opacity-20', 'grayscale');
-                    row.title = "DAYS_MIN EXCEEDS TIME_EXIT_LIMIT";
+                    row.title = "最小天数超过了强制平仓限制";
                 } else {
                     row.classList.remove('opacity-20', 'grayscale');
                     row.title = "";
@@ -486,8 +486,8 @@
             });
 
             const btn = document.getElementById('save-tiers-btn');
-            const originalText = 'SAVE_EXIT_TIERS';
-            btn.innerText = 'UPLOADING...';
+            const originalText = '保存梯度';
+            btn.innerText = '上传中...';
 
             const res = await fetch('/api/exit_tiers', {
                 method: 'POST',
@@ -496,10 +496,10 @@
             });
 
             if (res.ok) {
-                btn.innerText = 'SUCCESS_ACKNOWLEDGED';
+                btn.innerText = '已保存';
                 setTimeout(() => btn.innerText = originalText, 2000);
             } else {
-                btn.innerText = 'TRANSMISSION_ERROR';
+                btn.innerText = '传输错误';
                 setTimeout(() => btn.innerText = originalText, 2000);
             }
         }
@@ -515,18 +515,18 @@
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
 
             const btn = document.getElementById('save-buy-btn');
-            const originalText = 'COMMIT_BUY_PROTOCOL';
-            btn.innerText = 'EXECUTING...';
+            const originalText = '更新买入配置';
+            btn.innerText = '执行中...';
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                btn.innerText = 'DATA_SYNCED';
+                btn.innerText = '已保存';
                 setTimeout(() => btn.innerText = originalText, 2000);
             } else { 
-                btn.innerText = 'SYNC_FAILED'; 
+                btn.innerText = '保存失败'; 
                 setTimeout(() => btn.innerText = originalText, 2000);
             }
         }
@@ -542,18 +542,18 @@
             }
 
             const btn = document.getElementById('save-sell-btn');
-            const originalText = 'COMMIT_SELL_PROTOCOL';
-            btn.innerText = 'EXECUTING...';
+            const originalText = '更新卖出配置';
+            btn.innerText = '执行中...';
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                btn.innerText = 'DATA_SYNCED';
+                btn.innerText = '已保存';
                 setTimeout(() => btn.innerText = originalText, 2000);
             } else { 
-                btn.innerText = 'SYNC_FAILED'; 
+                btn.innerText = '保存失败'; 
                 setTimeout(() => btn.innerText = originalText, 2000);
             }
         }
@@ -573,8 +573,8 @@
                 };
 
                 const btn = document.getElementById('save-profit-btn');
-                const originalText = 'UPDATE_RECYCLE_PARAM';
-                btn.innerText = 'WRITING...';
+                const originalText = '更新循环参数';
+                btn.innerText = '写入中...';
 
                 try {
                     const res = await fetch('/api/settings', {
@@ -583,15 +583,15 @@
                         body: JSON.stringify(settings)
                     });
                     if (res.ok) {
-                        btn.innerText = 'WRITE_OK';
+                        btn.innerText = '已保存';
                         setTimeout(() => btn.innerText = originalText, 2000);
                         fetchStatus();
                     } else {
-                        btn.innerText = 'IO_ERROR';
+                        btn.innerText = 'IO 错误';
                         setTimeout(() => btn.innerText = originalText, 2000);
                     }
                 } catch (err) {
-                    btn.innerText = 'TIMEOUT_ERR';
+                    btn.innerText = '超时错误';
                     setTimeout(() => btn.innerText = originalText, 2000);
                 }
             }
@@ -619,20 +619,20 @@
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-6">
                 <div class="bg-[#00f0ff] text-black px-3 py-1 font-bold angle-top-right text-lg">
-                    Q-LEAPS_TERMINAL
+                    QQQ LEAPS | 控制终端 v2.1
                 </div>
                 <div class="flex items-center space-x-3 border-l border-[#333] pl-6">
                     <div id="conn-dot" class="w-2.5 h-2.5 bg-[#dc143c] pulse-status"></div>
-                    <span id="conn-text" class="text-[10px] font-bold tracking-[0.2em] text-[#dc143c]">OFFLINE</span>
+                    <span id="conn-text" class="text-[10px] font-bold tracking-[0.2em] text-[#dc143c]">离线</span>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
                 <div class="hidden md:block text-[10px] text-gray-500 font-bold tracking-widest uppercase">
-                    System Time: <span id="sys-time" class="text-gray-400">00:00:00</span>
+                    系统时间: <span id="sys-time" class="text-gray-400">00:00:00</span>
                 </div>
                 <form action="/logout" method="POST" class="m-0">
                     <button class="text-[10px] border border-[#333] px-4 py-1.5 hover:bg-[#dc143c] hover:border-[#dc143c] hover:text-white transition-all duration-300 font-bold uppercase tracking-widest">
-                        Terminate Session
+                        终止会话
                     </button>
                 </form>
             </div>
@@ -643,26 +643,26 @@
         <!-- Summary Dashboard -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="brutalist-card p-6">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Net Liquidity</div>
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">资产净值</div>
                 <div id="net-liq" class="text-2xl font-bold text-[#00f0ff] font-mono">$0.00</div>
                 <div class="mt-2 h-0.5 bg-[#333] w-full relative">
                     <div class="absolute top-0 left-0 h-full bg-[#00f0ff] w-1/3 opacity-30"></div>
                 </div>
             </div>
             <div class="brutalist-card accent-green p-6">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Total Cash</div>
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">现金余额</div>
                 <div id="cash-balance" class="text-2xl font-bold text-[#00ff41] font-mono">$0.00</div>
                 <div class="mt-2 h-0.5 bg-[#333] w-full relative">
                     <div class="absolute top-0 left-0 h-full bg-[#00ff41] w-1/2 opacity-30"></div>
                 </div>
             </div>
             <div class="brutalist-card p-6 border-l-4 border-l-[#a855f7]">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Profit Pool (Available)</div>
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">利润池 (可用)</div>
                 <div id="profit-pool" class="text-2xl font-bold text-[#a855f7] font-mono">$0.00</div>
-                <div id="invested-info" class="text-[9px] text-gray-600 mt-2 font-bold uppercase truncate tracking-tighter">Invested: $0.00 / Total: $0.00</div>
+                <div id="invested-info" class="text-[9px] text-gray-600 mt-2 font-bold uppercase truncate tracking-tighter">已投: $0.00 / 总计: $0.00</div>
             </div>
             <div class="brutalist-card accent-orange p-6">
-                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Buying Power</div>
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">购买力</div>
                 <div id="buying-power" class="text-2xl font-bold text-[#ff6b00] font-mono">$0.00</div>
                 <div class="mt-2 h-0.5 bg-[#333] w-full relative">
                     <div class="absolute top-0 left-0 h-full bg-[#ff6b00] w-2/3 opacity-30"></div>
@@ -678,21 +678,21 @@
                     <div class="p-4 bg-[#1a1a1a] border-b border-[#333] flex justify-between items-center">
                         <h2 class="text-lg font-bold flex items-center">
                             <span class="w-1.5 h-1.5 bg-[#00f0ff] mr-3"></span>
-                            LEAPS_CORE_STRATEGY
+                            LEAPS 核心策略
                         </h2>
-                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Live_Tracking</span>
+                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">实时追踪</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
                             <thead class="bg-[#0f0f0f]">
                                 <tr>
-                                    <th class="p-4">Asset</th>
-                                    <th class="p-4">Contract_ID</th>
-                                    <th class="p-4">Entry_Date</th>
-                                    <th class="p-4">Basis_Price</th>
-                                    <th class="p-4">QTY</th>
-                                    <th class="p-4">Unrealized</th>
-                                    <th class="p-4">Status</th>
+                                    <th class="p-4">代码</th>
+                                    <th class="p-4">合约 ID</th>
+                                    <th class="p-4">开仓日期</th>
+                                    <th class="p-4">开仓价</th>
+                                    <th class="p-4">数量</th>
+                                    <th class="p-4">未实现盈亏</th>
+                                    <th class="p-4">状态</th>
                                 </tr>
                             </thead>
                             <tbody id="pos-body" class="text-sm">
@@ -707,20 +707,20 @@
                     <div class="p-4 bg-[#1a1a1a] border-b border-[#333] flex justify-between items-center">
                         <h2 class="text-lg font-bold flex items-center">
                             <span class="w-1.5 h-1.5 bg-[#ff6b00] mr-3"></span>
-                            COMPREHENSIVE_PORTFOLIO
+                            综合持仓
                         </h2>
-                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Account_Wide</span>
+                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">全账户</span>
                     </div>
                     <div class="overflow-x-auto max-h-[400px]">
                         <table class="w-full text-left">
                             <thead class="bg-[#0f0f0f] sticky top-0 z-10">
                                 <tr>
-                                    <th class="p-4">Asset</th>
-                                    <th class="p-4">Type</th>
-                                    <th class="p-4">Qty</th>
-                                    <th class="p-4">Mark_Price</th>
-                                    <th class="p-4">PnL_Unreal</th>
-                                    <th class="p-4 text-right">Mkt_Value</th>
+                                    <th class="p-4">代码</th>
+                                    <th class="p-4">类型</th>
+                                    <th class="p-4">数量</th>
+                                    <th class="p-4">现价</th>
+                                    <th class="p-4">浮盈</th>
+                                    <th class="p-4 text-right">市值</th>
                                 </tr>
                             </thead>
                             <tbody id="portfolio-body" class="text-sm">
@@ -736,42 +736,42 @@
                 <!-- Buy Protocol Settings -->
                 <div class="brutalist-card p-6 border-l-4 border-l-[#00f0ff]">
                     <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
-                        ENTRY_PROTOCOLS
+                        买入/ROLL 条件
                     </h2>
                     <form id="buy-form" class="space-y-5">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Entry_Drop %</label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">入场跌幅 (%)</label>
                                 <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off" class="brutalist-input text-[#00f0ff]">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Roll_Drop %</label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">ROLL 跌幅 (%)</label>
                                 <input name="roll_drop_pct" type="number" step="0.1" autocomplete="off" class="brutalist-input text-[#a855f7]">
                             </div>
                         </div>
                         
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Target_Delta</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">目标 Delta</label>
                             <input name="target_delta" type="number" step="0.01" autocomplete="off" class="brutalist-input">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Min_DTE</label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">最小到期天数</label>
                                 <input name="min_expiry_days" type="number" autocomplete="off" class="brutalist-input">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Max_POS</label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">最大持仓</label>
                                 <input name="max_positions" type="number" autocomplete="off" class="brutalist-input">
                             </div>
                         </div>
 
                         <p class="text-[9px] text-gray-600 font-bold uppercase leading-relaxed italic border-l-2 border-[#333] pl-3 py-1">
-                            Note: Roll protocol triggers FIFO liquidation and immediate replacement when max_pos is reached.
+                            注：当达到最大持仓时，ROLL 协议将触发 FIFO（先进先出）平仓并立即替换。
                         </p>
 
                         <button id="save-buy-btn" type="submit" class="brutalist-button w-full mt-4">
-                            COMMIT_BUY_PROTOCOL
+                            更新买入配置
                         </button>
                     </form>
                 </div>
@@ -779,31 +779,31 @@
                 <!-- Sell & Tier Settings -->
                 <div class="brutalist-card p-6 border-l-4 border-l-[#dc143c]">
                     <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
-                        EXIT_TIERS
+                        卖出条件
                     </h2>
                     <form id="sell-form" class="space-y-4 mb-8">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Force_Exit_Days</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">强制平仓天数</label>
                             <input name="time_exit_days" type="number" autocomplete="off" class="brutalist-input border-[#dc143c]/50">
-                            <p class="text-[9px] text-gray-600 mt-2 font-bold uppercase tracking-tighter">Automatic liquidation occurs at expiration limit.</p>
+                            <p class="text-[9px] text-gray-600 mt-2 font-bold uppercase tracking-tighter">到达期限限制时将自动平仓。</p>
                         </div>
                         <button id="save-sell-btn" type="submit" class="brutalist-button btn-orange w-full">
-                            COMMIT_SELL_PROTOCOL
+                            更新卖出配置
                         </button>
                     </form>
 
                     <div class="space-y-4">
                         <div class="flex justify-between items-center border-b border-[#333] pb-2">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Yield_Tiers</h3>
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">收益梯度</h3>
                             <button onclick="addTierRow()" class="text-[10px] bg-[#333] hover:bg-[#444] text-white px-3 py-1 font-bold uppercase tracking-widest transition-colors">
-                                + Add_Tier
+                                + 添加梯度
                             </button>
                         </div>
                         <table class="w-full text-xs">
                             <thead>
                                 <tr class="text-left">
-                                    <th class="p-2 pl-0">Days_Span</th>
-                                    <th class="p-2">Target %</th>
+                                    <th class="p-2 pl-0">天数范围</th>
+                                    <th class="p-2">目标盈亏 %</th>
                                     <th class="p-2"></th>
                                 </tr>
                             </thead>
@@ -812,7 +812,7 @@
                             </tbody>
                         </table>
                         <button id="save-tiers-btn" onclick="saveExitTiers()" class="brutalist-button btn-green w-full text-xs">
-                            SAVE_EXIT_TIERS
+                            保存梯度
                         </button>
                     </div>
                 </div>
@@ -820,25 +820,25 @@
                 <!-- Profit Recycling -->
                 <div class="brutalist-card p-6 border-l-4 border-l-[#a855f7]">
                     <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
-                        PROFIT_RECYCLE
+                        利润循环设置
                     </h2>
                     <form id="profit-form" class="space-y-5">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Auto_Invest_QQQM</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">自动定投 QQQM</label>
                             <select name="auto_invest_qqqm" class="brutalist-input appearance-none cursor-pointer">
-                                <option value="0">DEACTIVATED</option>
-                                <option value="1">ACTIVATED</option>
+                                <option value="0">已禁用</option>
+                                <option value="1">已启用</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Min_Threshold ($)</label>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">起投阈值 ($)</label>
                             <input name="auto_invest_min_threshold" type="number" step="10" placeholder="500" class="brutalist-input">
                         </div>
                         <p class="text-[9px] text-gray-600 font-bold uppercase leading-relaxed italic border-l-2 border-[#333] pl-3 py-1">
-                            Realized LEAPS profit above threshold is automatically deployed into QQQM spot positions.
+                            已实现 LEAPS 利润超过阈值时自动部署到 QQQM 现货持仓。
                         </p>
                         <button id="save-profit-btn" type="submit" class="brutalist-button w-full mt-4" style="border-color: #a855f7; color: #a855f7;">
-                            UPDATE_RECYCLE_PARAM
+                            更新循环参数
                         </button>
                     </form>
                 </div>

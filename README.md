@@ -13,6 +13,51 @@ v2.0 版本引入了 **Web 控制面板**、**SQLite 数据库** 和 **动态配
 *   **⚙️ 动态配置**: 网页端实时调整 Target Delta, Entry Drop %, ROLL 阈值及定投参数。
 *   **🔒 安全认证**: 首次启动强制初始化管理员账号，支持密码登录和会话管理。
 *   **💾 SQLite 持久化**: 替代 CSV，提供更可靠的数据存储和并发支持。
+*   **🎨 Brutalist Industrial 设计**: 全新的野兽派工业风格界面，高对比度配色，独特的视觉体验。
+
+---
+
+## 🎨 Web 控制面板设计 (Web Dashboard Design)
+
+v2.1 版本采用了 **Brutalist Industrial Trading Terminal (野兽派工业交易终端)** 美学设计，打造独特的视觉体验。
+
+### 设计理念
+- **风格**: 野兽派工业风格 / 赛博朋克交易终端
+- **配色方案**:
+  - 霓虹青 (#00f0ff) - 主色调，核心流动性数据
+  - 矩阵绿 (#00ff41) - 现金余额和盈利指标
+  - 电橙 (#ff6b00) - 购买力和警告提示
+  - 绯红 (#dc143c) - 连接断开状态和亏损指标
+  - 深黑 (#0a0a0a) - 主背景色
+
+### 视觉特征
+- **字体**: JetBrains Mono (等宽数据字体) + Rajdhani (标题字体)
+  - 国内友好：完整的字体回退栈，支持 Fira Code、Consolas、Monaco 等
+  - font-display: swap 确保字体加载失败时立即显示回退字体
+- **几何设计**: 零圆角，锐利边缘，clip-path 装饰元素
+- **背景效果**: 
+  - 网格图案 (Grid Pattern)
+  - 扫描线动画 (Scanline Effect)
+  - 噪点纹理 (Grain Texture)
+- **动画效果**:
+  - 页面加载交错显示 (Staggered Reveal)
+  - 连接状态脉冲 (Pulse Animation)
+  - 按钮悬停发光 (Hover Glow)
+  - 数据更新闪烁 (Data Flash)
+
+### 兼容性
+- **响应式设计**: 完全支持桌面端和移动端
+- **国内访问优化**: 
+  - Google Fonts 作为首选字体源
+  - jsDelivr CDN 作为备用字体源
+  - 完整的系统字体回退栈
+  - font-display: swap 避免白屏
+
+### 技术实现
+- **CSS 框架**: Tailwind CSS (CDN)
+- **模板引擎**: Jinja2 (FastAPI)
+- **实时更新**: 每 3 秒自动刷新数据
+- **无需构建**: 纯前端实现，零依赖部署
 
 ---
 

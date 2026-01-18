@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACCESS TERMINAL - QQQ LEAPS Bot</title>
+    <title>登录终端 - QQQ LEAPS Bot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
@@ -187,7 +187,7 @@
         }
 
         .error-container::before {
-            content: "![ERROR]";
+            content: "![错误]";
             margin-right: 0.75rem;
             font-weight: bold;
         }
@@ -215,7 +215,7 @@
         <div class="corner corner-tl"></div>
         <div class="corner corner-br"></div>
 
-        <h1>Access Terminal</h1>
+        <h1>访问终端</h1>
 
         {% if error %}
         <div class="error-container">
@@ -225,23 +225,23 @@
 
         <form action="/login" method="POST">
             <div class="input-group">
-                <label for="username">User Identity</label>
-                <input type="text" id="username" name="username" required autocomplete="off" placeholder="IDENT_ID">
+                <label for="username">身份识别</label>
+                <input type="text" id="username" name="username" required autocomplete="off" placeholder="用户名">
             </div>
 
             <div class="input-group">
-                <label for="password">Security Protocol</label>
+                <label for="password">安全协议</label>
                 <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
 
             <button type="submit" class="btn-login">
-                Authenticate
+                登录
             </button>
         </form>
     </div>
 
     <div class="version-tag">
-        SYST_CORE_V2.1 // IBKR_INTEGRATED
+        核心系统 V2.1 // IBKR 集成
     </div>
 </body>
 
