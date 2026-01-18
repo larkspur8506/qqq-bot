@@ -99,6 +99,17 @@
             background: #d2d2d7;
             border-radius: 10px;
         }
+
+        /* 隐藏数字输入框默认箭头，防止遮挡文字 */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
     <script>
         let currentMaxHoldDays = 270;
@@ -210,15 +221,15 @@
                 tr.innerHTML = `
                     <td class="p-3">
                         <div class="flex items-center space-x-2">
-                            <input type="number" class="tier-min apple-input w-16 text-center" value="${tier.days_min}">
+                            <input type="number" class="tier-min apple-input w-20 text-center px-1" value="${tier.days_min}">
                             <span class="text-gray-300">-</span>
-                            <input type="number" class="tier-max apple-input w-16 text-center" 
+                            <input type="number" class="tier-max apple-input w-20 text-center px-1" 
                                    value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
                         </div>
                     </td>
                     <td class="p-3">
                         <div class="flex items-center space-x-1">
-                            <input type="number" class="tier-pnl apple-input w-16 text-center font-bold text-green-600" value="${(tier.target_pnl * 100).toFixed(0)}">
+                            <input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-green-600" value="${(tier.target_pnl * 100).toFixed(0)}">
                             <span class="text-[10px] text-gray-400 font-bold">%</span>
                         </div>
                     </td>
@@ -242,8 +253,8 @@
             const tr = document.createElement('tr');
             tr.className = "tier-row border-b border-gray-50";
             tr.innerHTML = `
-                <td class="p-3"><div class="flex items-center space-x-2"><input type="number" class="tier-min apple-input w-16 text-center" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input w-16 text-center" value="${currentMaxHoldDays}" disabled></div></td>
-                <td class="p-3"><div class="flex items-center space-x-1"><input type="number" class="tier-pnl apple-input w-16 text-center font-bold text-green-600" value="10"><span class="text-[10px] text-gray-400 font-bold">%</span></div></td>
+                <td class="p-3"><div class="flex items-center space-x-2"><input type="number" class="tier-min apple-input w-20 text-center px-1" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input w-20 text-center px-1" value="${currentMaxHoldDays}" disabled></div></td>
+                <td class="p-3"><div class="flex items-center space-x-1"><input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-green-600" value="10"><span class="text-[10px] text-gray-400 font-bold">%</span></div></td>
                 <td class="p-3 text-right"><button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">&times;</button></td>
             `;
             tbody.appendChild(tr);
@@ -364,43 +375,45 @@
 </head>
 
 <body class="pb-20">
-    <nav class="apple-glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center shadow-sm">
-        <div class="flex items-center space-x-6">
-            <h1 class="text-lg font-bold tracking-tight text-gray-900">QQQ LEAPS <span class="text-blue-600">管理后台</span>
-            </h1>
-            <div class="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
+    <nav
+        class="apple-glass sticky top-0 z-50 px-4 md:px-6 py-4 flex flex-wrap justify-between items-center shadow-sm gap-4">
+        <div class="flex items-center space-x-3 md:space-x-6">
+            <h1 class="text-base md:text-lg font-bold tracking-tight text-gray-900">QQQ LEAPS <span
+                    class="text-blue-600">管理后台</span></h1>
+            <div class="flex items-center space-x-2 bg-gray-100 rounded-full px-2 md:px-3 py-1">
                 <span id="conn-dot" class="status-dot bg-gray-300"></span>
-                <span id="conn-text" class="text-[10px] font-semibold text-gray-500 uppercase">API 连接检测中</span>
+                <span id="conn-text" class="text-[9px] md:text-[10px] font-semibold text-gray-500 uppercase">检测中</span>
             </div>
         </div>
-        <div class="flex items-center space-x-6 text-[12px] text-gray-400">
-            <div class="hidden sm:block">系统时间: <span id="sys-time" class="font-medium text-gray-600">00:00:00</span>
+        <div class="flex items-center space-x-4 md:space-x-6 text-[11px] md:text-[12px] text-gray-400">
+            <div class="hidden xs:block">系统时间: <span id="sys-time" class="font-medium text-gray-600">00:00:00</span>
             </div>
             <form action="/logout" method="POST" class="m-0">
                 <button
-                    class="bg-white border border-gray-200 px-4 py-1.5 rounded-full hover:bg-gray-50 transition-colors font-medium text-gray-600">退出登录</button>
+                    class="bg-white border border-gray-200 px-3 md:px-4 py-1.5 rounded-full hover:bg-gray-50 transition-colors font-medium text-gray-600 shadow-sm">退出</button>
             </form>
         </div>
     </nav>
 
-    <main class="container mx-auto px-6 mt-10 space-y-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="apple-card p-6">
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">资产净值</div>
-                <div id="net-liq" class="text-2xl font-bold text-gray-900 font-mono">$0.00</div>
+    <main class="container mx-auto px-4 md:px-6 mt-6 md:mt-10 space-y-6 md:space-y-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div class="apple-card p-4 md:p-6">
+                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">资产净值</div>
+                <div id="net-liq" class="text-xl md:text-2xl font-bold text-gray-900 font-mono">$0.00</div>
             </div>
-            <div class="apple-card p-6">
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">可用现金</div>
-                <div id="cash-balance" class="text-2xl font-bold text-green-600 font-mono">$0.00</div>
+            <div class="apple-card p-4 md:p-6">
+                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">可用现金</div>
+                <div id="cash-balance" class="text-xl md:text-2xl font-bold text-green-600 font-mono">$0.00</div>
             </div>
-            <div class="apple-card p-6">
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">当前购买力</div>
-                <div id="buying-power" class="text-2xl font-bold text-orange-500 font-mono">$0.00</div>
+            <div class="apple-card p-4 md:p-6">
+                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">当前购买力</div>
+                <div id="buying-power" class="text-xl md:text-2xl font-bold text-orange-500 font-mono">$0.00</div>
             </div>
-            <div class="apple-card p-6 border-l-4 border-purple-400">
-                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">已实现利润 (再投资)</div>
-                <div id="profit-pool" class="text-2xl font-bold text-gray-900 font-mono">$0.00</div>
-                <div id="invested-info" class="text-[10px] text-gray-400 mt-1">系统就绪</div>
+            <div class="apple-card p-4 md:p-6 border-l-4 border-purple-400 col-span-2 lg:col-span-1">
+                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">已实现利润 (再投资)
+                </div>
+                <div id="profit-pool" class="text-xl md:text-2xl font-bold text-gray-900 font-mono">$0.00</div>
+                <div id="invested-info" class="text-[9px] md:text-[10px] text-gray-400 mt-1">系统就绪</div>
             </div>
         </div>
 
