@@ -29,3 +29,6 @@ Thumbs.db
 
 # Docker override (Optional, for local testing without affecting production)
 docker-compose.override.yml
+
+# OpenCode workspace
+.opencode/

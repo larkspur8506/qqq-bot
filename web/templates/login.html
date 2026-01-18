@@ -4,36 +4,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员登录 - QQQ LEAPS Bot</title>
+    <title>ACCESS TERMINAL - QQQ LEAPS Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Backup CDN for Chinese users -->
+    <link href="https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/Variable/NotoSansCJK-VF.ttf" rel="preload" as="font" type="font/ttf" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --neon-cyan: #00f0ff;
+            --bg-dark: #0a0a0a;
+            --error-red: #ff003c;
+            --terminal-border: rgba(0, 240, 255, 0.4);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: #fff;
+            /* Extended fallback stack for Chinese users */
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', 'Liberation Mono', 'Microsoft YaHei UI', monospace;
+            font-display: swap;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 240, 255, 0.03) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100px; }
+        }
+
+        .terminal-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid var(--terminal-border);
+            padding: 3rem 2.5rem;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.05);
+            clip-path: polygon(
+                20px 0, 100% 0, 
+                100% calc(100% - 20px), calc(100% - 20px) 100%, 
+                0 100%, 0 20px
+            );
+        }
+
+        .terminal-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--neon-cyan);
+            pointer-events: none;
+            clip-path: polygon(
+                20px 0, 100% 0, 
+                100% calc(100% - 20px), calc(100% - 20px) 100%, 
+                0 100%, 0 20px
+            );
+        }
+
+        /* Decorative Corners */
+        .corner {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--neon-cyan);
+            z-index: 2;
+        }
+
+        .corner-tl { top: -2px; left: 18px; border-right: 0; border-bottom: 0; }
+        .corner-br { bottom: 18px; right: -2px; border-left: 0; border-top: 0; }
+
+        h1 {
+            /* Extended fallback stack preserving industrial look */
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            text-align: center;
+            font-display: swap;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--neon-cyan);
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--terminal-border);
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', system-ui, sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 1rem;
+            animation: pulse 4s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(0, 240, 255, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+            100% { box-shadow: 0 0 5px rgba(0, 240, 255, 0.2); }
+        }
+
+        .btn-login:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 30px var(--neon-cyan);
+        }
+
+        .error-container {
+            border: 1px solid var(--error-red);
+            background: rgba(255, 0, 60, 0.1);
+            color: var(--error-red);
+            padding: 0.75rem;
+            font-size: 0.8rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+        }
+
+        .error-container::before {
+            content: "![ERROR]";
+            margin-right: 0.75rem;
+            font-weight: bold;
+        }
+
+        .version-tag {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            font-size: 0.6rem;
+            color: var(--terminal-border);
+            letter-spacing: 0.2em;
+        }
+
+        /* Glitch effect for header */
+        .glitch-wrapper {
+            position: relative;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-900 text-gray-100 h-screen flex items-center justify-center">
-    <div class="w-full max-w-md bg-gray-800 rounded-lg shadow-lg p-8">
-        <h2 class="text-3xl font-bold text-center text-blue-500 mb-6">管理员登录</h2>
+<body>
+    <div class="scanline"></div>
+
+    <div class="terminal-container">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-br"></div>
+
+        <h1>Access Terminal</h1>
 
         {% if error %}
-        <div class="bg-red-500 text-white p-3 rounded mb-4 text-center">
+        <div class="error-container">
             {{ error }}
         </div>
         {% endif %}
 
-        <form action="/login" method="POST" class="space-y-6">
-            <div>
-                <label class="block text-sm font-medium mb-1">用户名</label>
-                <input type="text" name="username" required
-                    class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:outline-none focus:border-blue-500">
+        <form action="/login" method="POST">
+            <div class="input-group">
+                <label for="username">User Identity</label>
+                <input type="text" id="username" name="username" required autocomplete="off" placeholder="IDENT_ID">
             </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">密码</label>
-                <input type="password" name="password" required
-                    class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:outline-none focus:border-blue-500">
+
+            <div class="input-group">
+                <label for="password">Security Protocol</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
-            <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
-                登录
+
+            <button type="submit" class="btn-login">
+                Authenticate
             </button>
         </form>
+    </div>
+
+    <div class="version-tag">
+        SYST_CORE_V2.1 // IBKR_INTEGRATED
     </div>
 </body>
 

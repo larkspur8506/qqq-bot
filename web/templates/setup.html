@@ -4,40 +4,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统初始化 - QQQ LEAPS Bot</title>
+    <title>SYSTEM INITIALIZATION | QQQ LEAPS BOT</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Backup CDN for Chinese users -->
+    <link href="https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/Variable/NotoSansCJK-VF.ttf" rel="preload" as="font" type="font/ttf" crossorigin>
+    <style>
+        :root {
+            --primary: #00f0ff;
+            --bg: #0a0a0a;
+            --accent: #00ff41;
+            --surface: #111111;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--primary);
+            /* Extended fallback stack for Chinese users */
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', 'Liberation Mono', 'Microsoft YaHei UI', monospace;
+            font-display: swap;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1, h2, h3 {
+            /* Extended fallback stack preserving industrial look */
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-display: swap;
+        }
+
+        .brutalist-container {
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            background: var(--surface);
+            border: 2px solid var(--primary);
+            padding: 40px;
+            box-shadow: 10px 10px 0px rgba(0, 240, 255, 0.2);
+            /* Cut corners */
+            clip-path: polygon(
+                20px 0%, 
+                100% 0%, 
+                100% calc(100% - 20px), 
+                calc(100% - 20px) 100%, 
+                0% 100%, 
+                0% 20px
+            );
+        }
+
+        /* Decorative corner elements */
+        .brutalist-container::before {
+            content: "ID-001";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 10px;
+            opacity: 0.5;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            padding: 12px 15px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(0, 255, 65, 0.05);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .info-box {
+            background: rgba(0, 255, 65, 0.05);
+            border: 1px solid var(--accent);
+            padding: 15px;
+            margin-bottom: 30px;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--accent);
+            position: relative;
+        }
+
+        .info-box::after {
+            content: "STATUS: READY";
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: var(--bg);
+            padding: 0 5px;
+            font-size: 9px;
+            border: 1px solid var(--accent);
+        }
+
+        .btn-initialize {
+            width: 100%;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            padding: 18px;
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', system-ui, sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-initialize:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0 var(--primary);
+            background: #fff;
+        }
+
+        .btn-initialize:active {
+            transform: translate(0, 0);
+            box-shadow: none;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 240, 255, 0.1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3BaseFilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/baseFilter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .title-wrapper {
+            margin-bottom: 40px;
+            border-left: 4px solid var(--accent);
+            padding-left: 15px;
+        }
+
+        .glitch-text {
+            position: relative;
+            display: inline-block;
+        }
+
+        .glitch-text::before {
+            content: "SYSTEM INITIALIZATION";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            color: var(--primary);
+            background: var(--surface);
+            overflow: hidden;
+            clip: rect(0, 900px, 0, 0);
+            animation: glitch 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch {
+            0% { clip: rect(10px, 9999px, 5px, 0); }
+            10% { clip: rect(40px, 9999px, 42px, 0); }
+            20% { clip: rect(20px, 9999px, 80px, 0); }
+            30% { clip: rect(60px, 9999px, 10px, 0); }
+            40% { clip: rect(10px, 9999px, 50px, 0); }
+            50% { clip: rect(80px, 9999px, 20px, 0); }
+            60% { clip: rect(30px, 9999px, 90px, 0); }
+            70% { clip: rect(50px, 9999px, 10px, 0); }
+            80% { clip: rect(10px, 9999px, 60px, 0); }
+            90% { clip: rect(70px, 9999px, 30px, 0); }
+            100% { clip: rect(20px, 9999px, 40px, 0); }
+        }
+    </style>
 </head>
 
-<body class="bg-gray-900 text-gray-100 h-screen flex items-center justify-center">
-    <div class="w-full max-w-lg bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-green-500 mb-2">系统初始化</h1>
-            <p class="text-gray-400">未检测到管理员账户，请创建主账户。</p>
+<body>
+    <div class="noise"></div>
+    <div class="scanline"></div>
+
+    <main class="brutalist-container">
+        <div class="title-wrapper">
+            <h1 class="text-4xl font-bold glitch-text">SYSTEM INITIALIZATION</h1>
+            <p class="text-[10px] mt-2 text-gray-400 opacity-70">SECURITY LEVEL: ALPHA-01 // NO ADMIN DETECTED</p>
         </div>
 
-        <form action="/setup" method="POST" class="space-y-6">
-            <div>
-                <label class="block text-sm font-medium mb-1">管理员用户名</label>
-                <input type="text" name="username" placeholder="admin" required
-                    class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:outline-none focus:border-green-500">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">主密码</label>
-                <input type="password" name="password" required
-                    class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:outline-none focus:border-green-500">
+        <form action="/setup" method="POST">
+            <div class="input-group">
+                <label for="username">Root Identifier</label>
+                <input type="text" id="username" name="username" placeholder="ADMIN_USER" required autofocus>
             </div>
 
-            <div class="bg-gray-700/50 p-4 rounded text-sm text-gray-300">
-                <p><strong>提示：</strong> 密码将使用 Bcrypt 安全加密。
-                    配置数据库存储在 Docker 卷 <code>/data</code> 中。</p>
+            <div class="input-group">
+                <label for="password">Access Keyphrase</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
 
-            <button type="submit"
-                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition duration-200 uppercase tracking-wide">
-                初始化系统
+            <div class="info-box">
+                <p>
+                    <span class="font-bold">[SECURITY NOTICE]</span><br>
+                    CREDENTIALS WILL BE ENCRYPTED USING BCRYPT HASHING PROTOCOL. 
+                    CORE DATABASE IS MAPPED TO LOCAL DOCKER VOLUME <code>/data</code>. 
+                    ENSURE VOLUME PERSISTENCE BEFORE DEPLOYMENT.
+                </p>
+            </div>
+
+            <button type="submit" class="btn-initialize">
+                Establish Protocol
             </button>
         </form>
-    </div>
+
+        <div class="mt-8 flex justify-between items-center opacity-30 text-[10px]">
+            <span>QQQ-LEAPS-V2.1</span>
+            <span>TERMINAL: AUTH_READY</span>
+        </div>
+    </main>
 </body>
 
 </html>

@@ -4,20 +4,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q-LEAPS 控制台</title>
+    <title>Q-LEAPS | TERMINAL v2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fallback CDN for Chinese users (75cdn mirrors Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Backup CDN -->
+    <link href="https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/Variable/NotoSansCJK-VF.ttf" rel="preload" as="font" type="font/ttf" crossorigin>
+
     <style>
+        :root {
+            --neon-cyan: #00f0ff;
+            --electric-orange: #ff6b00;
+            --matrix-green: #00ff41;
+            --crimson-red: #dc143c;
+            --bg-deep: #0a0a0a;
+            --bg-card: #111111;
+            --bg-input: #0f0f0f;
+            --border-dim: #333333;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #e5e5e5;
+            /* Extended fallback stack for Chinese users */
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', 'Liberation Mono', 'Microsoft YaHei UI', monospace;
+            font-display: swap;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .header-font {
+            /* Extended fallback stack preserving industrial look */
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-display: swap;
+        }
+
+        /* Background Grid Pattern */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(51, 51, 51, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(51, 51, 51, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.1) 50%
+            ), linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.03),
+                rgba(0, 255, 0, 0.01),
+                rgba(0, 0, 255, 0.03)
+            );
+            background-size: 100% 4px, 3px 100%;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* Grain Texture */
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.05;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .brutalist-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .brutalist-card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 10px;
+            height: 10px;
+            border-top: 2px solid var(--neon-cyan);
+            border-left: 2px solid var(--neon-cyan);
+        }
+
+        .brutalist-card.accent-orange::before {
+            border-top-color: var(--electric-orange);
+            border-left-color: var(--electric-orange);
+        }
+
+        .brutalist-card.accent-green::before {
+            border-top-color: var(--matrix-green);
+            border-left-color: var(--matrix-green);
+        }
+
+        .brutalist-input {
+            border: 1px solid var(--border-dim);
+            background-color: var(--bg-input);
+            color: white;
+            padding: 0.5rem;
+            width: 100%;
+            outline: none;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .brutalist-input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        .brutalist-button {
+            background-color: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .brutalist-button:hover {
+            background-color: var(--neon-cyan);
+            color: black;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        .brutalist-button:active {
+            transform: scale(0.98);
+        }
+
+        .brutalist-button.btn-green {
+            border-color: var(--matrix-green);
+            color: var(--matrix-green);
+        }
+
+        .brutalist-button.btn-green:hover {
+            background-color: var(--matrix-green);
+            color: black;
+            box-shadow: 0 0 15px var(--matrix-green);
+        }
+
+        .brutalist-button.btn-orange {
+            border-color: var(--electric-orange);
+            color: var(--electric-orange);
+        }
+
+        .brutalist-button.btn-orange:hover {
+            background-color: var(--electric-orange);
+            color: black;
+            box-shadow: 0 0 15px var(--electric-orange);
+        }
+
+        /* Custom Table Styling */
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', system-ui, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            border-bottom: 1px solid var(--border-dim);
+        }
+
+        td {
+            border-bottom: 1px solid rgba(51, 51, 51, 0.5);
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .staggered-reveal > * {
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .staggered-reveal > *:nth-child(1) { animation-delay: 0.1s; }
+        .staggered-reveal > *:nth-child(2) { animation-delay: 0.2s; }
+        .staggered-reveal > *:nth-child(3) { animation-delay: 0.3s; }
+        .staggered-reveal > *:nth-child(4) { animation-delay: 0.4s; }
+        .staggered-reveal > *:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pulse-status {
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        /* Angled Corners with clip-path */
+        .angle-top-right {
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--border-dim); }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
             -webkit-appearance: none;
             margin: 0;
-        }
-
-        .card {
-            background-color: rgba(31, 41, 55, 1);
-            border: 1px solid rgba(55, 65, 81, 1);
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
     </style>
 
@@ -33,32 +264,36 @@
                 const connDot = document.getElementById('conn-dot');
                 const connText = document.getElementById('conn-text');
                 if (data.connected) {
-                    connDot.classList.remove('bg-red-500');
-                    connDot.classList.add('bg-green-500');
-                    connText.innerText = '已连接';
+                    connDot.classList.remove('bg-[#dc143c]');
+                    connDot.classList.add('bg-[#00ff41]');
+                    connText.innerText = 'CONNECTED';
+                    connText.classList.add('text-[#00ff41]');
+                    connText.classList.remove('text-[#dc143c]');
                 } else {
-                    connDot.classList.remove('bg-green-500');
-                    connDot.classList.add('bg-red-500');
-                    connText.innerText = '未连接';
+                    connDot.classList.remove('bg-[#00ff41]');
+                    connDot.classList.add('bg-[#dc143c]');
+                    connText.innerText = 'DISCONNECTED';
+                    connText.classList.add('text-[#dc143c]');
+                    connText.classList.remove('text-[#00ff41]');
                 }
 
                 // Positions Table
                 const tbody = document.getElementById('pos-body');
                 tbody.innerHTML = '';
                 if (!data.positions || data.positions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">暂无持仓</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-600 italic uppercase tracking-widest">No Active Positions Detected</td></tr>';
                 } else {
                     data.positions.forEach(pos => {
                         const tr = document.createElement('tr');
-                        tr.className = "border-b border-gray-700 hover:bg-gray-800 transition";
+                        tr.className = "group";
                         tr.innerHTML = `
-                            <td class="p-3 font-bold">${pos.symbol}</td>
-                            <td class="p-3 font-mono text-sm">${pos.contract_id}</td>
-                            <td class="p-3 text-gray-400 text-sm">${pos.entry_date}</td>
-                            <td class="p-3">$${pos.entry_price.toFixed(2)}</td>
-                            <td class="p-3">${pos.quantity}</td>
-                            <td class="p-3 font-mono">--</td> 
-                            <td class="p-3"><span class="bg-green-900 text-green-200 px-2 py-1 rounded text-xs font-bold">持有中</span></td>
+                            <td class="p-4 font-bold text-[#00f0ff]">${pos.symbol}</td>
+                            <td class="p-4 text-xs font-mono text-gray-400">${pos.contract_id}</td>
+                            <td class="p-4 text-xs text-gray-500">${pos.entry_date}</td>
+                            <td class="p-4 font-mono">$${pos.entry_price.toFixed(2)}</td>
+                            <td class="p-4 font-mono">${pos.quantity}</td>
+                            <td class="p-4 font-mono text-gray-600">--</td> 
+                            <td class="p-4"><span class="border border-[#00ff41] text-[#00ff41] px-2 py-0.5 text-[10px] font-bold uppercase">Holding</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -88,7 +323,7 @@
                     const invested = data.stats.qqqm_invested_capital || 0;
                     const available = profit - invested;
                     document.getElementById('profit-pool').innerText = `$${available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    document.getElementById('invested-info').innerText = `已投 QQQM: $${invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | 总利润: $${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('invested-info').innerText = `INVESTED: $${invested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / TOTAL: $${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 }
 
                 // Fill Account Summary
@@ -105,15 +340,15 @@
                     pbody.innerHTML = '';
                     data.portfolio.holdings.forEach(h => {
                         const tr = document.createElement('tr');
-                        tr.className = "border-b border-gray-700 text-xs hover:bg-gray-800";
-                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400';
+                        tr.className = "text-[11px] group";
+                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-[#00ff41]' : 'text-[#dc143c]';
                         tr.innerHTML = `
-                            <td class="p-2">${h.symbol}</td>
-                            <td class="p-2 font-mono">${h.secType}</td>
-                            <td class="p-2">${h.quantity}</td>
-                            <td class="p-2">$${h.mktPrice.toFixed(2)}</td>
-                            <td class="p-2 font-bold ${pnlColor}">$${h.unrealizedPnL.toFixed(2)}</td>
-                            <td class="p-2 text-gray-400">$${h.mktValue.toLocaleString()}</td>
+                            <td class="p-3 font-bold text-gray-200">${h.symbol}</td>
+                            <td class="p-3 text-gray-500 uppercase">${h.secType}</td>
+                            <td class="p-3 font-mono">${h.quantity}</td>
+                            <td class="p-3 font-mono text-gray-400">$${h.mktPrice.toFixed(2)}</td>
+                            <td class="p-3 font-bold ${pnlColor}">$${h.unrealizedPnL.toFixed(2)}</td>
+                            <td class="p-3 text-gray-500 font-mono text-right">$${h.mktValue.toLocaleString()}</td>
                         `;
                         pbody.appendChild(tr);
                     });
@@ -146,24 +381,24 @@
             tiers.forEach((tier, idx) => {
                 const isLast = idx === tiers.length - 1;
                 const tr = document.createElement('tr');
-                tr.className = "border-b border-gray-700 tier-row";
+                tr.className = "tier-row";
                 tr.innerHTML = `
-                    <td class="p-2">
-                        <div class="flex items-center space-x-1">
-                            <input type="number" class="tier-min w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" value="${tier.days_min}">
-                            <span>-</span>
-                            <input type="number" class="tier-max w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" 
+                    <td class="p-3">
+                        <div class="flex items-center space-x-2">
+                            <input type="number" class="tier-min brutalist-input w-20 text-center" value="${tier.days_min}">
+                            <span class="text-gray-600">/</span>
+                            <input type="number" class="tier-max brutalist-input w-20 text-center" 
                                    value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
                         </div>
                     </td>
-                    <td class="p-2">
+                    <td class="p-3">
                         <div class="flex items-center space-x-2">
-                            <input type="number" class="tier-pnl w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center text-green-400 font-bold" value="${(tier.target_pnl * 100).toFixed(0)}">
-                            <span>%</span>
+                            <input type="number" class="tier-pnl brutalist-input w-20 text-center text-[#00ff41] font-bold" value="${(tier.target_pnl * 100).toFixed(0)}">
+                            <span class="text-[10px] text-gray-500 uppercase font-bold">%</span>
                         </div>
                     </td>
-                    <td class="p-2 text-right">
-                        <button onclick="removeTierRow(this)" class="text-red-500 hover:text-red-400">×</button>
+                    <td class="p-3 text-right">
+                        <button onclick="removeTierRow(this)" class="text-[#dc143c] hover:text-white transition-colors text-xl leading-none">&times;</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -183,23 +418,23 @@
             }
 
             const tr = document.createElement('tr');
-            tr.className = "border-b border-gray-700 tier-row";
+            tr.className = "tier-row";
             tr.innerHTML = `
-                <td class="p-2">
-                    <div class="flex items-center space-x-1">
-                        <input type="number" class="tier-min w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" value="${lastMax + 1}">
-                        <span>-</span>
-                        <input type="number" class="tier-max w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center" value="${currentMaxHoldDays}" disabled>
-                    </div>
-                </td>
-                <td class="p-2">
+                <td class="p-3">
                     <div class="flex items-center space-x-2">
-                        <input type="number" class="tier-pnl w-16 bg-gray-900 border border-gray-700 rounded p-1 text-center text-green-400 font-bold" value="10">
-                        <span>%</span>
+                        <input type="number" class="tier-min brutalist-input w-20 text-center" value="${lastMax + 1}">
+                        <span class="text-gray-600">/</span>
+                        <input type="number" class="tier-max brutalist-input w-20 text-center" value="${currentMaxHoldDays}" disabled>
                     </div>
                 </td>
-                <td class="p-2 text-right">
-                    <button onclick="removeTierRow(this)" class="text-red-500 hover:text-red-400">×</button>
+                <td class="p-3">
+                    <div class="flex items-center space-x-2">
+                        <input type="number" class="tier-pnl brutalist-input w-20 text-center text-[#00ff41] font-bold" value="10">
+                        <span class="text-[10px] text-gray-500 uppercase font-bold">%</span>
+                    </div>
+                </td>
+                <td class="p-3 text-right">
+                    <button onclick="removeTierRow(this)" class="text-[#dc143c] hover:text-white transition-colors text-xl leading-none">&times;</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -228,10 +463,10 @@
                 }
 
                 if (min >= currentMaxHoldDays) {
-                    row.classList.add('opacity-30', 'grayscale');
-                    row.title = "起始天数超过强制平仓天数，此阶梯无效";
+                    row.classList.add('opacity-20', 'grayscale');
+                    row.title = "DAYS_MIN EXCEEDS TIME_EXIT_LIMIT";
                 } else {
-                    row.classList.remove('opacity-30', 'grayscale');
+                    row.classList.remove('opacity-20', 'grayscale');
                     row.title = "";
                 }
             });
@@ -242,7 +477,6 @@
             const tiers = [];
             rows.forEach(row => {
                 const min = parseInt(row.querySelector('.tier-min').value);
-                // If it's the last row, use the global max hold days
                 const max = row.querySelector('.tier-max').disabled ? currentMaxHoldDays : parseInt(row.querySelector('.tier-max').value);
                 const pnl = parseFloat(row.querySelector('.tier-pnl').value) / 100;
 
@@ -252,7 +486,8 @@
             });
 
             const btn = document.getElementById('save-tiers-btn');
-            btn.innerText = '保存中...';
+            const originalText = 'SAVE_EXIT_TIERS';
+            btn.innerText = 'UPLOADING...';
 
             const res = await fetch('/api/exit_tiers', {
                 method: 'POST',
@@ -261,10 +496,11 @@
             });
 
             if (res.ok) {
-                btn.innerText = '已保存！';
-                setTimeout(() => btn.innerText = '保存止盈梯度', 2000);
+                btn.innerText = 'SUCCESS_ACKNOWLEDGED';
+                setTimeout(() => btn.innerText = originalText, 2000);
             } else {
-                btn.innerText = '错误';
+                btn.innerText = 'TRANSMISSION_ERROR';
+                setTimeout(() => btn.innerText = originalText, 2000);
             }
         }
 
@@ -279,16 +515,20 @@
             if (data.max_positions) data.max_positions = parseInt(data.max_positions);
 
             const btn = document.getElementById('save-buy-btn');
-            btn.innerText = '保存中...';
+            const originalText = 'COMMIT_BUY_PROTOCOL';
+            btn.innerText = 'EXECUTING...';
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                btn.innerText = '已保存！';
-                setTimeout(() => btn.innerText = '更新买入设置', 2000);
-            } else { btn.innerText = '错误'; }
+                btn.innerText = 'DATA_SYNCED';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            } else { 
+                btn.innerText = 'SYNC_FAILED'; 
+                setTimeout(() => btn.innerText = originalText, 2000);
+            }
         }
 
         async function saveSellSettings(e) {
@@ -302,16 +542,20 @@
             }
 
             const btn = document.getElementById('save-sell-btn');
-            btn.innerText = '保存中...';
+            const originalText = 'COMMIT_SELL_PROTOCOL';
+            btn.innerText = 'EXECUTING...';
             const res = await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                btn.innerText = '已保存！';
-                setTimeout(() => btn.innerText = '更新卖出设置', 2000);
-            } else { btn.innerText = '错误'; }
+                btn.innerText = 'DATA_SYNCED';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            } else { 
+                btn.innerText = 'SYNC_FAILED'; 
+                setTimeout(() => btn.innerText = originalText, 2000);
+            }
         }
 
         setInterval(fetchStatus, 3000);
@@ -319,6 +563,7 @@
         window.onload = function () {
             fetchStatus();
             fetchExitTiers();
+
             async function saveProfitSettings(e) {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -328,7 +573,8 @@
                 };
 
                 const btn = document.getElementById('save-profit-btn');
-                btn.innerText = '保存中...';
+                const originalText = 'UPDATE_RECYCLE_PARAM';
+                btn.innerText = 'WRITING...';
 
                 try {
                     const res = await fetch('/api/settings', {
@@ -337,14 +583,16 @@
                         body: JSON.stringify(settings)
                     });
                     if (res.ok) {
-                        btn.innerText = '已保存！';
-                        setTimeout(() => btn.innerText = '更新利润设置', 2000);
+                        btn.innerText = 'WRITE_OK';
+                        setTimeout(() => btn.innerText = originalText, 2000);
                         fetchStatus();
                     } else {
-                        btn.innerText = '错误';
+                        btn.innerText = 'IO_ERROR';
+                        setTimeout(() => btn.innerText = originalText, 2000);
                     }
                 } catch (err) {
-                    btn.innerText = '保存失败';
+                    btn.innerText = 'TIMEOUT_ERR';
+                    setTimeout(() => btn.innerText = originalText, 2000);
                 }
             }
 
@@ -361,205 +609,252 @@
     </script>
 </head>
 
-<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
-    <!-- Top Bar -->
-    <nav class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                QQQ LEAPS MASTERY
-            </h1>
-            <div class="flex items-center space-x-2 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">
-                <div id="conn-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
-                <span id="conn-text" class="text-xs text-gray-300 font-mono">未连接</span>
+<body>
+    <div class="grid-bg"></div>
+    <div class="scanlines"></div>
+    <div class="grain"></div>
+
+    <!-- Top Navigation -->
+    <nav class="border-b border-[#333] bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <div class="bg-[#00f0ff] text-black px-3 py-1 font-bold angle-top-right text-lg">
+                    Q-LEAPS_TERMINAL
+                </div>
+                <div class="flex items-center space-x-3 border-l border-[#333] pl-6">
+                    <div id="conn-dot" class="w-2.5 h-2.5 bg-[#dc143c] pulse-status"></div>
+                    <span id="conn-text" class="text-[10px] font-bold tracking-[0.2em] text-[#dc143c]">OFFLINE</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="hidden md:block text-[10px] text-gray-500 font-bold tracking-widest uppercase">
+                    System Time: <span id="sys-time" class="text-gray-400">00:00:00</span>
+                </div>
+                <form action="/logout" method="POST" class="m-0">
+                    <button class="text-[10px] border border-[#333] px-4 py-1.5 hover:bg-[#dc143c] hover:border-[#dc143c] hover:text-white transition-all duration-300 font-bold uppercase tracking-widest">
+                        Terminate Session
+                    </button>
+                </form>
             </div>
         </div>
-        <form action="/logout" method="POST">
-            <button class="text-xs text-gray-500 hover:text-white transition">退出</button>
-        </form>
     </nav>
 
-    <div class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Dashboard Summary Row (Top) -->
-        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
-            <div class="card p-4">
-                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">资产净值 (NET LIQ)</div>
-                <div id="net-liq" class="text-xl font-bold text-blue-400">$0.00</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">可用现金 (CASH)</div>
-                <div id="cash-balance" class="text-xl font-bold text-green-400">$0.00</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">期权累计净利 (PROFIT POOL)</div>
-                <div id="profit-pool" class="text-xl font-bold text-purple-400">$0.00</div>
-                <div id="invested-info" class="text-[10px] text-gray-500 truncate">已投: $0.00 / 总利: $0.00</div>
-            </div>
-            <div class="card p-4">
-                <div class="text-[10px] uppercase text-gray-400 font-bold mb-1">购买力 (BUYING POWER)</div>
-                <div id="buying-power" class="text-xl font-bold text-pink-400">$0.00</div>
-            </div>
-        </div>
-
-        <!-- Left Col: Positions -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-4 border-b border-gray-700 flex justify-between items-center">
-                    <h2 class="font-bold text-lg">LEAPS 策略持仓 (tracked)</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
-                            <tr>
-                                <th class="p-3">代码</th>
-                                <th class="p-3">合约ID</th>
-                                <th class="p-3">开仓日期</th>
-                                <th class="p-3">开仓价</th>
-                                <th class="p-3">数量</th>
-                                <th class="p-3">浮盈</th>
-                                <th class="p-3">状态</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pos-body" class="text-sm"></tbody>
-                    </table>
+    <div class="container mx-auto p-6 space-y-8 staggered-reveal">
+        <!-- Summary Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="brutalist-card p-6">
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Net Liquidity</div>
+                <div id="net-liq" class="text-2xl font-bold text-[#00f0ff] font-mono">$0.00</div>
+                <div class="mt-2 h-0.5 bg-[#333] w-full relative">
+                    <div class="absolute top-0 left-0 h-full bg-[#00f0ff] w-1/3 opacity-30"></div>
                 </div>
             </div>
-
-            <!-- Comprehensive Portfolio (New) -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                <div class="p-4 border-b border-gray-700">
-                    <h2 class="font-bold text-lg">综合持仓 (Stocks, Options, Bonds, Cash)</h2>
+            <div class="brutalist-card accent-green p-6">
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Total Cash</div>
+                <div id="cash-balance" class="text-2xl font-bold text-[#00ff41] font-mono">$0.00</div>
+                <div class="mt-2 h-0.5 bg-[#333] w-full relative">
+                    <div class="absolute top-0 left-0 h-full bg-[#00ff41] w-1/2 opacity-30"></div>
                 </div>
-                <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
-                            <tr>
-                                <th class="p-3">资产</th>
-                                <th class="p-3">类型</th>
-                                <th class="p-3">数量</th>
-                                <th class="p-3">现价</th>
-                                <th class="p-3">盈亏</th>
-                                <th class="p-3">市值</th>
-                            </tr>
-                        </thead>
-                        <tbody id="portfolio-body" class="text-sm"></tbody>
-                    </table>
+            </div>
+            <div class="brutalist-card p-6 border-l-4 border-l-[#a855f7]">
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Profit Pool (Available)</div>
+                <div id="profit-pool" class="text-2xl font-bold text-[#a855f7] font-mono">$0.00</div>
+                <div id="invested-info" class="text-[9px] text-gray-600 mt-2 font-bold uppercase truncate tracking-tighter">Invested: $0.00 / Total: $0.00</div>
+            </div>
+            <div class="brutalist-card accent-orange p-6">
+                <div class="text-[10px] uppercase text-gray-500 font-bold mb-2 tracking-[0.15em]">Buying Power</div>
+                <div id="buying-power" class="text-2xl font-bold text-[#ff6b00] font-mono">$0.00</div>
+                <div class="mt-2 h-0.5 bg-[#333] w-full relative">
+                    <div class="absolute top-0 left-0 h-full bg-[#ff6b00] w-2/3 opacity-30"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Col: Settings -->
-        <div class="space-y-6">
-            <!-- Buy Settings -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">买入/ROLL 条件</h2>
-                <form id="buy-form" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1 text-[10px]">入场跌幅
-                                (%)</label>
-                            <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off"
-                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1 text-[10px]">ROLL 跌幅
-                                (%)</label>
-                            <input name="roll_drop_pct" type="number" step="0.1" autocomplete="off"
-                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
-                        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Position Tables -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- LEAPS Strategy Positions -->
+                <div class="brutalist-card border-l-0 overflow-hidden">
+                    <div class="p-4 bg-[#1a1a1a] border-b border-[#333] flex justify-between items-center">
+                        <h2 class="text-lg font-bold flex items-center">
+                            <span class="w-1.5 h-1.5 bg-[#00f0ff] mr-3"></span>
+                            LEAPS_CORE_STRATEGY
+                        </h2>
+                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Live_Tracking</span>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">ROLL 规则：满仓时若跌幅达到设定值，卖旧买新。</p>
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">目标 Delta</label>
-                        <input name="target_delta" type="number" step="0.01" autocomplete="off"
-                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white focus:border-blue-500 focus:outline-none">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-[#0f0f0f]">
+                                <tr>
+                                    <th class="p-4">Asset</th>
+                                    <th class="p-4">Contract_ID</th>
+                                    <th class="p-4">Entry_Date</th>
+                                    <th class="p-4">Basis_Price</th>
+                                    <th class="p-4">QTY</th>
+                                    <th class="p-4">Unrealized</th>
+                                    <th class="p-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pos-body" class="text-sm">
+                                <!-- Data injected via JS -->
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">最小到期天数</label>
-                            <input name="min_expiry_days" type="number" autocomplete="off"
-                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">最大持仓</label>
-                            <input name="max_positions" type="number" autocomplete="off"
-                                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
-                        </div>
-                    </div>
-                    <button id="save-buy-btn" type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
-                        更新买入设置
-                    </button>
-                </form>
-            </div>
+                </div>
 
-            <!-- Sell Settings -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2">卖出条件</h2>
-                <form id="sell-form" class="space-y-4 mb-6">
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">强制平仓天数</label>
-                        <input name="time_exit_days" type="number" autocomplete="off"
-                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white">
-                        <p class="text-xs text-gray-500 mt-1">超过此天数强制卖出（止盈梯度自动联动）</p>
+                <!-- Portfolio Overview -->
+                <div class="brutalist-card border-l-0 overflow-hidden">
+                    <div class="p-4 bg-[#1a1a1a] border-b border-[#333] flex justify-between items-center">
+                        <h2 class="text-lg font-bold flex items-center">
+                            <span class="w-1.5 h-1.5 bg-[#ff6b00] mr-3"></span>
+                            COMPREHENSIVE_PORTFOLIO
+                        </h2>
+                        <span class="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Account_Wide</span>
                     </div>
-                    <button id="save-sell-btn" type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded transition">
-                        更新卖出设置
-                    </button>
-                </form>
-
-                <div class="pt-4 border-t border-gray-700">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-sm font-bold text-gray-300">止盈阶梯</h3>
-                        <button onclick="addTierRow()"
-                            class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white">+ 添加</button>
+                    <div class="overflow-x-auto max-h-[400px]">
+                        <table class="w-full text-left">
+                            <thead class="bg-[#0f0f0f] sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-4">Asset</th>
+                                    <th class="p-4">Type</th>
+                                    <th class="p-4">Qty</th>
+                                    <th class="p-4">Mark_Price</th>
+                                    <th class="p-4">PnL_Unreal</th>
+                                    <th class="p-4 text-right">Mkt_Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolio-body" class="text-sm">
+                                <!-- Data injected via JS -->
+                            </tbody>
+                        </table>
                     </div>
-                    <table class="w-full text-xs">
-                        <thead class="bg-gray-700/50 text-gray-400">
-                            <tr>
-                                <th class="p-2 text-left">持仓天数</th>
-                                <th class="p-2 text-left">止盈 %</th>
-                                <th class="p-2 text-right"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tiers-body" class="text-gray-300"></tbody>
-                    </table>
-                    <button id="save-tiers-btn" onclick="saveExitTiers()"
-                        class="w-full mt-4 bg-green-700 hover:bg-green-600 text-white text-xs font-bold py-2 rounded transition">
-                        保存止盈梯度
-                    </button>
                 </div>
             </div>
 
-            <!-- Profit Recycling Settings -->
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-6">
-                <h2 class="font-bold text-lg mb-4 border-b border-gray-700 pb-2 flex items-center">
-                    <span class="mr-2">🔄</span> 利润循环设置
-                </h2>
-                <form id="profit-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">自动定投 QQQM</label>
-                        <select name="auto_invest_qqqm"
-                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
-                            <option value="0">关闭</option>
-                            <option value="1">开启</option>
-                        </select>
-                        <p class="text-[10px] text-gray-500 mt-1">开启后，期权平仓利润将自动买入 QQQM 现货。</p>
+            <!-- Right Column: Settings Panels -->
+            <div class="space-y-8">
+                <!-- Buy Protocol Settings -->
+                <div class="brutalist-card p-6 border-l-4 border-l-[#00f0ff]">
+                    <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
+                        ENTRY_PROTOCOLS
+                    </h2>
+                    <form id="buy-form" class="space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Entry_Drop %</label>
+                                <input name="entry_drop_pct" type="number" step="0.1" autocomplete="off" class="brutalist-input text-[#00f0ff]">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Roll_Drop %</label>
+                                <input name="roll_drop_pct" type="number" step="0.1" autocomplete="off" class="brutalist-input text-[#a855f7]">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Target_Delta</label>
+                            <input name="target_delta" type="number" step="0.01" autocomplete="off" class="brutalist-input">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Min_DTE</label>
+                                <input name="min_expiry_days" type="number" autocomplete="off" class="brutalist-input">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Max_POS</label>
+                                <input name="max_positions" type="number" autocomplete="off" class="brutalist-input">
+                            </div>
+                        </div>
+
+                        <p class="text-[9px] text-gray-600 font-bold uppercase leading-relaxed italic border-l-2 border-[#333] pl-3 py-1">
+                            Note: Roll protocol triggers FIFO liquidation and immediate replacement when max_pos is reached.
+                        </p>
+
+                        <button id="save-buy-btn" type="submit" class="brutalist-button w-full mt-4">
+                            COMMIT_BUY_PROTOCOL
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Sell & Tier Settings -->
+                <div class="brutalist-card p-6 border-l-4 border-l-[#dc143c]">
+                    <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
+                        EXIT_TIERS
+                    </h2>
+                    <form id="sell-form" class="space-y-4 mb-8">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Force_Exit_Days</label>
+                            <input name="time_exit_days" type="number" autocomplete="off" class="brutalist-input border-[#dc143c]/50">
+                            <p class="text-[9px] text-gray-600 mt-2 font-bold uppercase tracking-tighter">Automatic liquidation occurs at expiration limit.</p>
+                        </div>
+                        <button id="save-sell-btn" type="submit" class="brutalist-button btn-orange w-full">
+                            COMMIT_SELL_PROTOCOL
+                        </button>
+                    </form>
+
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b border-[#333] pb-2">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Yield_Tiers</h3>
+                            <button onclick="addTierRow()" class="text-[10px] bg-[#333] hover:bg-[#444] text-white px-3 py-1 font-bold uppercase tracking-widest transition-colors">
+                                + Add_Tier
+                            </button>
+                        </div>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-left">
+                                    <th class="p-2 pl-0">Days_Span</th>
+                                    <th class="p-2">Target %</th>
+                                    <th class="p-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tiers-body">
+                                <!-- Tier rows injected via JS -->
+                            </tbody>
+                        </table>
+                        <button id="save-tiers-btn" onclick="saveExitTiers()" class="brutalist-button btn-green w-full text-xs">
+                            SAVE_EXIT_TIERS
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 uppercase tracking-wider mb-1">起投阈值 ($)</label>
-                        <input name="auto_invest_min_threshold" type="number" step="10" placeholder="500"
-                            class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white text-sm focus:border-purple-500 focus:outline-none">
-                        <p class="text-[10px] text-gray-500 mt-1">当利润余额超过此金额时触发买入。</p>
-                    </div>
-                    <button id="save-profit-btn" type="submit"
-                        class="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold py-2 rounded transition text-sm">
-                        更新利润设置
-                    </button>
-                </form>
+                </div>
+
+                <!-- Profit Recycling -->
+                <div class="brutalist-card p-6 border-l-4 border-l-[#a855f7]">
+                    <h2 class="text-xl font-bold mb-6 flex items-center border-b border-[#333] pb-2">
+                        PROFIT_RECYCLE
+                    </h2>
+                    <form id="profit-form" class="space-y-5">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Auto_Invest_QQQM</label>
+                            <select name="auto_invest_qqqm" class="brutalist-input appearance-none cursor-pointer">
+                                <option value="0">DEACTIVATED</option>
+                                <option value="1">ACTIVATED</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-widest">Min_Threshold ($)</label>
+                            <input name="auto_invest_min_threshold" type="number" step="10" placeholder="500" class="brutalist-input">
+                        </div>
+                        <p class="text-[9px] text-gray-600 font-bold uppercase leading-relaxed italic border-l-2 border-[#333] pl-3 py-1">
+                            Realized LEAPS profit above threshold is automatically deployed into QQQM spot positions.
+                        </p>
+                        <button id="save-profit-btn" type="submit" class="brutalist-button w-full mt-4" style="border-color: #a855f7; color: #a855f7;">
+                            UPDATE_RECYCLE_PARAM
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // System Clock
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('sys-time').innerText = now.toTimeString().split(' ')[0];
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
 </body>
 
 </html>
