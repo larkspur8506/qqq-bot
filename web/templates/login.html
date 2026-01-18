@@ -5,226 +5,170 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>身份验证 - QQQ LEAPS 战略终端</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap"
-        rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-cyan: #00f0ff;
-            --electric-orange: #ff6b00;
-            --matrix-green: #00ff41;
-            --crimson-red: #dc143c;
-            --bg-deep: #050505;
-            --bg-card: #0a0a0a;
-            --bg-input: #020202;
-            --border-dim: #1f1f1f;
-            --border-glow: rgba(0, 240, 255, 0.1);
+            --apple-blue: #0071E3;
+            --bg-gray: #F5F5F7;
         }
 
         body {
-            background-color: var(--bg-deep);
-            color: #d1d1d1;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background-color: var(--bg-gray);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             height: 100vh;
             margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            letter-spacing: -0.02em;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Base Grid & Grain */
-        .grid-bg {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: -2;
-            pointer-events: none;
-        }
-
-        .grain {
-            position: fixed;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            opacity: 0.08;
-            mix-blend-mode: overlay;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* Industrial Panel */
-        .industrial-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            position: relative;
+        .apple-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
             width: 100%;
-            max-width: 420px;
-            padding: 3rem 2.5rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
-            animation: panelFade 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            max-width: 400px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            animation: cardShow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes panelFade {
+        @keyframes cardShow {
             from {
                 opacity: 0;
-                transform: translateY(20px);
-                filter: blur(10px);
+                transform: scale(0.95) translateY(10px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
-                filter: blur(0);
+                transform: scale(1) translateY(0);
             }
         }
 
-        .industrial-panel::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            right: -1px;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, transparent 50%, var(--border-dim) 50%);
-            pointer-events: none;
-        }
-
-        .header-font {
-            font-family: 'Rajdhani', sans-serif;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-
         h1 {
-            color: var(--neon-cyan);
-            letter-spacing: 0.2em;
-            font-size: 1.5rem;
-            margin-bottom: 2.5rem;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1d1d1f;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
             text-align: center;
-            border-bottom: 1px solid var(--border-dim);
-            padding-bottom: 1rem;
         }
 
-        /* Inputs */
+        .subtitle {
+            font-size: 14px;
+            color: #86868b;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
         .input-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 20px;
         }
 
         label {
             display: block;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: rgba(255, 255, 255, 0.3);
-            margin-bottom: 0.75rem;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+            margin-left: 4px;
         }
 
-        .brutalist-input {
-            background: var(--bg-input);
-            border: 1px solid var(--border-dim);
-            color: #fff;
-            padding: 0.8rem 1rem;
+        .apple-input {
             width: 100%;
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 16px;
+            color: #1d1d1f;
+            transition: all 0.2s;
             outline: none;
-            font-size: 0.9rem;
-            transition: all 0.3s;
         }
 
-        .brutalist-input:focus {
-            border-color: var(--neon-cyan);
-            background: rgba(0, 240, 255, 0.02);
-            box-shadow: 0 0 15px var(--border-glow);
+        .apple-input:focus {
+            border-color: var(--apple-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
         }
 
-        /* Buttons */
-        .action-btn {
+        .btn-primary {
             width: 100%;
-            padding: 1rem;
-            background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            letter-spacing: 0.3em;
+            background-color: var(--apple-blue);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 1.5rem;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s ease;
+            margin-top: 12px;
         }
 
-        .action-btn:hover {
-            background: var(--neon-cyan);
-            color: #000;
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
         }
 
         .error-msg {
-            background: rgba(220, 20, 60, 0.1);
-            border-left: 2px solid var(--crimson-red);
-            padding: 0.75rem;
-            color: var(--crimson-red);
-            font-size: 11px;
-            margin-bottom: 1.5rem;
-            text-transform: uppercase;
-            font-weight: 700;
+            background: #fff2f2;
+            color: #ff3b30;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 24px;
+            text-align: center;
+            border: 1px solid #ffe5e5;
         }
 
-        .dec-line {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 8px;
-            color: rgba(255, 255, 255, 0.1);
-            font-family: monospace;
+        .footer-text {
+            margin-top: 32px;
+            font-size: 11px;
+            color: #86868b;
+            text-align: center;
+            letter-spacing: 0.02em;
         }
     </style>
 </head>
 
 <body>
-    <div class="grid-bg"></div>
-    <div class="grain"></div>
-
-    <div class="industrial-panel">
-        <div class="dec-line">// ACCESS_AUTH_LINK_08</div>
-        <h1 class="header-font">战略终端访问</h1>
+    <div class="apple-card">
+        <h1>账户登录</h1>
+        <p class="subtitle">QQQ LEAPS 交易管理系统</p>
 
         {% if error %}
         <div class="error-msg">
-            [ 验证失败 ] {{ error }}
+            {{ error }}
         </div>
         {% endif %}
 
         <form action="/login" method="POST">
             <div class="input-group">
-                <label>身份识别码 (IDENTIFIER)</label>
-                <input type="text" name="username" class="brutalist-input" required autocomplete="off"
-                    placeholder="输入用户名...">
+                <label>用户名</label>
+                <input type="text" name="username" class="apple-input" required autocomplete="off" placeholder="请输入用户名">
             </div>
 
             <div class="input-group">
-                <label>安全接入序列 (ACCESS_TOKEN)</label>
-                <input type="password" name="password" class="brutalist-input" required placeholder="输入访问密钥...">
+                <label>密码</label>
+                <input type="password" name="password" class="apple-input" required placeholder="请输入密码">
             </div>
 
-            <button type="submit" class="action-btn">
-                [ 建立连接 ]
+            <button type="submit" class="btn-primary">
+                登录
             </button>
         </form>
 
-        <div class="mt-8 text-center">
-            <span class="text-[8px] font-bold text-white/10 uppercase tracking-[0.3em]">QQQ_TERMINAL SECURE_SHELL
-                V2.5</span>
+        <div class="footer-text">
+            系统版本 V2.5
         </div>
     </div>
 </body>

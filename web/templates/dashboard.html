@@ -4,290 +4,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QQQ LEAPS | 控制终端 v2.1</title>
+    <title>QQQ LEAPS | 交易管理系统 v2.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fallback CDN for Chinese users (75cdn mirrors Google Fonts) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap"
-        rel="stylesheet">
-    <!-- Backup CDN -->
-    <link href="https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/Variable/NotoSansCJK-VF.ttf" rel="preload"
-        as="font" type="font/ttf" crossorigin>
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-cyan: #00f0ff;
-            --electric-orange: #ff6b00;
-            --matrix-green: #00ff41;
-            --crimson-red: #dc143c;
-            --bg-deep: #050505;
-            --bg-card: #0a0a0a;
-            --bg-input: #020202;
-            --border-dim: #1f1f1f;
-            --border-glow: rgba(0, 240, 255, 0.1);
+            --apple-blue: #0071E3;
+            --apple-green: #34c759;
+            --apple-red: #ff3b30;
+            --apple-orange: #ff9500;
+            --apple-gray: #F5F5F7;
         }
 
         body {
-            background-color: var(--bg-deep);
-            color: #d1d1d1;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            overflow-x: hidden;
-            letter-spacing: -0.02em;
+            background-color: var(--apple-gray);
+            font-family: 'Inter', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: #1d1d1f;
         }
 
-        h1,
-        h2,
-        h3,
-        .header-font {
-            font-family: 'Rajdhani', sans-serif;
-            text-transform: uppercase;
-            font-weight: 700;
+        .apple-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
-        /* Base Grid & Grain */
-        .grid-bg {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: -2;
-            pointer-events: none;
+        .apple-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .grain {
-            position: fixed;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-            opacity: 0.08;
-            mix-blend-mode: overlay;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* Industrial Panels */
-        .industrial-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border-dim);
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .industrial-panel::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            right: -1px;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, transparent 50%, var(--border-dim) 50%);
-            pointer-events: none;
-        }
-
-        .panel-header {
-            border-bottom: 2px solid var(--border-dim);
-            padding: 0.75rem 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.02), transparent);
-        }
-
-        .status-tag {
-            font-size: 9px;
-            font-weight: 800;
-            padding: 1px 6px;
-            border: 1px solid currentColor;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        /* Inputs & Buttons */
-        .brutalist-input {
-            background: var(--bg-input);
-            border: 1px solid var(--border-dim);
-            color: #fff;
-            padding: 0.6rem;
-            width: 100%;
+        .apple-input {
+            background: #fbfbfd;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
             outline: none;
-            font-size: 0.85rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s;
         }
 
-        .brutalist-input:focus {
-            border-color: var(--neon-cyan);
-            background: rgba(0, 240, 255, 0.02);
-            box-shadow: 0 0 15px var(--border-glow);
+        .apple-input:focus {
+            border-color: var(--apple-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
         }
 
-        .action-btn {
-            padding: 0.8rem 1.5rem;
-            background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
+        .apple-btn {
+            background: var(--apple-blue);
+            color: #fff;
+            border-radius: 10px;
+            font-weight: 500;
+            padding: 10px 20px;
+            transition: all 0.2s;
             cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
         }
 
-        .action-btn:hover {
-            background: var(--neon-cyan);
-            color: #000;
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+        .apple-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
 
-        .action-btn::before {
-            content: '>>';
-            position: absolute;
-            left: -20px;
-            opacity: 0;
-            transition: all 0.3s;
+        .apple-btn:active {
+            transform: scale(0.98);
         }
 
-        .action-btn:hover::before {
-            left: 10px;
-            opacity: 0.5;
+        .apple-btn-secondary {
+            background: #f5f5f7;
+            color: #1d1d1f;
+            border: 1px solid #d2d2d7;
         }
 
-        /* Data Effects */
-        .pnl-positive {
-            color: var(--matrix-green);
-            text-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
         }
 
-        .pnl-negative {
-            color: var(--crimson-red);
-            text-shadow: 0 0 10px rgba(220, 20, 60, 0.2);
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
         }
 
-        /* Staggered Animations */
-        @keyframes slideReveal {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-                filter: blur(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-                filter: blur(0);
-            }
-        }
-
-        .reveal {
-            opacity: 0;
-            animation: slideReveal 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-        }
-
-        /* Custom Table Styling */
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        th {
-            font-family: 'Rajdhani', 'Impact', 'Arial Black', 'Oswald', system-ui, sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #888;
-            border-bottom: 1px solid var(--border-dim);
-        }
-
-        td {
-            border-bottom: 1px solid rgba(51, 51, 51, 0.5);
-        }
-
-        tr:hover td {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        /* Angled Corners with clip-path */
-        .angle-top-right {
-            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
-        }
-
-        /* Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
+        .custom-scroll::-webkit-scrollbar-track {
             background: transparent;
         }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #222;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: var(--neon-cyan);
-        }
-
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d2d2d7;
+            border-radius: 10px;
         }
     </style>
-
     <script>
         let currentMaxHoldDays = 270;
-
         async function fetchStatus() {
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
-
-                // Connection Status
                 const connDot = document.getElementById('conn-dot');
                 const connText = document.getElementById('conn-text');
                 if (data.connected) {
-                    connDot.style.backgroundColor = 'var(--matrix-green)';
-                    connDot.style.boxShadow = '0 0 10px var(--matrix-green)';
+                    connDot.style.backgroundColor = 'var(--apple-green)';
                     connText.innerText = '终端网络在线';
-                    connText.style.color = 'var(--matrix-green)';
+                    connText.style.color = 'var(--apple-green)';
                 } else {
-                    connDot.style.backgroundColor = 'var(--crimson-red)';
-                    connDot.style.boxShadow = '0 0 10px var(--crimson-red)';
+                    connDot.style.backgroundColor = 'var(--apple-red)';
                     connText.innerText = '终端网络断开';
-                    connText.style.color = 'var(--crimson-red)';
+                    connText.style.color = 'var(--apple-red)';
                 }
-
-                // Positions Table
                 const tbody = document.getElementById('pos-body');
                 tbody.innerHTML = '';
                 if (!data.positions || data.positions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-600 italic uppercase tracking-widest">暂无活跃持仓</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400 italic">暂无活跃持仓</td></tr>';
                 } else {
                     data.positions.forEach(pos => {
                         const tr = document.createElement('tr');
-                        tr.className = "group";
+                        tr.className = "border-b border-gray-50 hover:bg-gray-50 transition-colors";
                         tr.innerHTML = `
-                            <td class="p-4 font-bold text-[#00f0ff]">${pos.symbol}</td>
-                            <td class="p-4 text-xs font-mono text-gray-400">${pos.contract_id}</td>
+                            <td class="p-4 font-semibold text-blue-600">${pos.symbol}</td>
+                            <td class="p-4 text-xs text-gray-400">${pos.contract_id}</td>
                             <td class="p-4 text-xs text-gray-500">${pos.entry_date}</td>
-                            <td class="p-4 font-mono">$${pos.entry_price.toFixed(2)}</td>
-                            <td class="p-4 font-mono">${pos.quantity}</td>
-                            <td class="p-4 font-mono text-gray-600">--</td> 
-                            <td class="p-4"><span class="border border-matrix-green text-matrix-green px-2 py-0.5 text-[10px] font-bold uppercase">运行中</span></td>
+                            <td class="p-4 font-medium">$${pos.entry_price.toFixed(2)}</td>
+                            <td class="p-4">${pos.quantity}</td>
+                            <td class="p-4 text-gray-300">--</td>
+                            <td class="p-4"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-[10px] font-bold">运行中</span></td>
                         `;
                         tbody.appendChild(tr);
                     });
                 }
-
-                // Fill Buy Settings
                 if (data.settings && data.settings.entry_drop_pct !== undefined && !document.forms['buy-form'].dataset.filled) {
                     const bf = document.forms['buy-form'];
                     bf.entry_drop_pct.value = (data.settings.entry_drop_pct * 100).toFixed(2);
@@ -299,63 +148,51 @@
                     bf.max_positions.value = data.settings.max_positions;
                     bf.dataset.filled = "true";
                 }
-
-                // Fill Profit Settings
                 if (data.settings && data.settings.auto_invest_min_threshold !== undefined && !document.forms['profit-form'].dataset.filled) {
                     const pf = document.forms['profit-form'];
                     pf.auto_invest_qqqm.value = data.settings.auto_invest_qqqm;
                     pf.auto_invest_min_threshold.value = data.settings.auto_invest_min_threshold;
                     pf.dataset.filled = "true";
                 }
-
                 if (data.stats) {
                     const profit = data.stats.leaps_realized_profit || 0;
                     const invested = data.stats.qqqm_invested_capital || 0;
-                    const available = profit - invested;
-                    document.getElementById('profit-pool').innerText = `$${available.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                    document.getElementById('invested-info').innerText = `已投: $${invested.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / 总计: $${profit.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                    document.getElementById('profit-pool').innerText = `$${(profit - invested).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`;
+                    document.getElementById('invested-info').innerText = `已投: $${invested.toLocaleString()} / 总计: $${profit.toLocaleString()}`;
                 }
-
-                // Fill Account Summary
                 if (data.portfolio && data.portfolio.summary) {
                     const sum = data.portfolio.summary;
                     document.getElementById('net-liq').innerText = '$' + sum.NetLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2 });
                     document.getElementById('cash-balance').innerText = '$' + sum.TotalCashValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
                     document.getElementById('buying-power').innerText = '$' + sum.BuyingPower.toLocaleString(undefined, { minimumFractionDigits: 2 });
                 }
-
-                // Portfolio Table
                 const pbody = document.getElementById('portfolio-body');
                 if (pbody && data.portfolio && data.portfolio.holdings) {
                     pbody.innerHTML = '';
                     data.portfolio.holdings.forEach(h => {
                         const tr = document.createElement('tr');
-                        tr.className = "text-[11px] group";
-                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-[#00ff41]' : 'text-[#dc143c]';
+                        tr.className = "text-[12px] border-b border-gray-50";
+                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600';
                         tr.innerHTML = `
-                            <td class="p-3 font-bold text-gray-200">${h.symbol}</td>
-                            <td class="p-3 text-gray-500 uppercase">${h.secType}</td>
-                            <td class="p-3 font-mono">${h.quantity}</td>
-                            <td class="p-3 font-mono text-gray-400">$${h.mktPrice.toFixed(2)}</td>
+                            <td class="p-3 font-medium">${h.symbol}</td>
+                            <td class="p-3 text-gray-400 uppercase text-[10px]">${h.secType}</td>
+                            <td class="p-3">${h.quantity}</td>
+                            <td class="p-3 text-gray-500">$${h.mktPrice.toFixed(2)}</td>
                             <td class="p-3 font-bold ${pnlColor}">$${h.unrealizedPnL.toFixed(2)}</td>
-                            <td class="p-3 text-gray-500 font-mono text-right">$${h.mktValue.toLocaleString()}</td>
+                            <td class="p-3 text-right">$${h.mktValue.toLocaleString()}</td>
                         `;
                         pbody.appendChild(tr);
                     });
                 }
-
-                // Fill Sell Settings
                 if (data.settings && data.settings.time_exit_days !== undefined && !document.forms['sell-form'].dataset.filled) {
                     const sf = document.forms['sell-form'];
                     sf.time_exit_days.value = data.settings.time_exit_days;
                     currentMaxHoldDays = data.settings.time_exit_days;
-                    updateExitTiersDisplay(); // Sync tiers display
+                    updateExitTiersDisplay();
                     sf.dataset.filled = "true";
                 }
-
             } catch (e) { console.error(e); }
         }
-
         async function fetchExitTiers() {
             try {
                 const res = await fetch('/api/exit_tiers');
@@ -363,74 +200,55 @@
                 renderTiers(data.tiers);
             } catch (e) { console.error(e); }
         }
-
         function renderTiers(tiers) {
             const tbody = document.getElementById('tiers-body');
             tbody.innerHTML = '';
-
             tiers.forEach((tier, idx) => {
                 const isLast = idx === tiers.length - 1;
                 const tr = document.createElement('tr');
-                tr.className = "tier-row";
+                tr.className = "tier-row border-b border-gray-50";
                 tr.innerHTML = `
                     <td class="p-3">
                         <div class="flex items-center space-x-2">
-                            <input type="number" class="tier-min brutalist-input w-20 text-center" value="${tier.days_min}">
-                            <span class="text-gray-600">/</span>
-                            <input type="number" class="tier-max brutalist-input w-20 text-center" 
+                            <input type="number" class="tier-min apple-input w-16 text-center" value="${tier.days_min}">
+                            <span class="text-gray-300">-</span>
+                            <input type="number" class="tier-max apple-input w-16 text-center" 
                                    value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
                         </div>
                     </td>
                     <td class="p-3">
-                        <div class="flex items-center space-x-2">
-                            <input type="number" class="tier-pnl brutalist-input w-20 text-center text-[#00ff41] font-bold" value="${(tier.target_pnl * 100).toFixed(0)}">
-                            <span class="text-[10px] text-gray-500 uppercase font-bold">%</span>
+                        <div class="flex items-center space-x-1">
+                            <input type="number" class="tier-pnl apple-input w-16 text-center font-bold text-green-600" value="${(tier.target_pnl * 100).toFixed(0)}">
+                            <span class="text-[10px] text-gray-400 font-bold">%</span>
                         </div>
                     </td>
                     <td class="p-3 text-right">
-                        <button onclick="removeTierRow(this)" class="text-[#dc143c] hover:text-white transition-colors text-xl leading-none">&times;</button>
+                        <button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">&times;</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
             updateExitTiersDisplay();
         }
-
         function addTierRow() {
             const tbody = document.getElementById('tiers-body');
             const rows = tbody.querySelectorAll('.tier-row');
             let lastMax = 0;
             if (rows.length > 0) {
-                // Update previous last row to be editable if it's not the last anymore
                 const prevLastMax = rows[rows.length - 1].querySelector('.tier-max');
                 prevLastMax.disabled = false;
                 lastMax = parseInt(prevLastMax.value) || 0;
             }
-
             const tr = document.createElement('tr');
-            tr.className = "tier-row";
+            tr.className = "tier-row border-b border-gray-50";
             tr.innerHTML = `
-                <td class="p-3">
-                    <div class="flex items-center space-x-2">
-                        <input type="number" class="tier-min brutalist-input w-20 text-center" value="${lastMax + 1}">
-                        <span class="text-gray-600">/</span>
-                        <input type="number" class="tier-max brutalist-input w-20 text-center" value="${currentMaxHoldDays}" disabled>
-                    </div>
-                </td>
-                <td class="p-3">
-                    <div class="flex items-center space-x-2">
-                        <input type="number" class="tier-pnl brutalist-input w-20 text-center text-[#00ff41] font-bold" value="10">
-                        <span class="text-[10px] text-gray-500 uppercase font-bold">%</span>
-                    </div>
-                </td>
-                <td class="p-3 text-right">
-                    <button onclick="removeTierRow(this)" class="text-[#dc143c] hover:text-white transition-colors text-xl leading-none">&times;</button>
-                </td>
+                <td class="p-3"><div class="flex items-center space-x-2"><input type="number" class="tier-min apple-input w-16 text-center" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input w-16 text-center" value="${currentMaxHoldDays}" disabled></div></td>
+                <td class="p-3"><div class="flex items-center space-x-1"><input type="number" class="tier-pnl apple-input w-16 text-center font-bold text-green-600" value="10"><span class="text-[10px] text-gray-400 font-bold">%</span></div></td>
+                <td class="p-3 text-right"><button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">&times;</button></td>
             `;
             tbody.appendChild(tr);
             updateExitTiersDisplay();
         }
-
         function removeTierRow(btn) {
             btn.closest('tr').remove();
             const rows = document.querySelectorAll('.tier-row');
@@ -441,27 +259,21 @@
                 lastMax.disabled = true;
             }
         }
-
         function updateExitTiersDisplay() {
             const rows = document.querySelectorAll('.tier-row');
             rows.forEach((row, idx) => {
                 const min = parseInt(row.querySelector('.tier-min').value);
                 const isLast = idx === rows.length - 1;
-
-                if (isLast) {
-                    row.querySelector('.tier-max').value = currentMaxHoldDays;
-                }
-
+                if (isLast) row.querySelector('.tier-max').value = currentMaxHoldDays;
                 if (min >= currentMaxHoldDays) {
-                    row.classList.add('opacity-20', 'grayscale');
-                    row.title = "最小天数超过了强制平仓限制";
+                    row.classList.add('opacity-30', 'grayscale');
+                    row.title = "时间越限";
                 } else {
-                    row.classList.remove('opacity-20', 'grayscale');
+                    row.classList.remove('opacity-30', 'grayscale');
                     row.title = "";
                 }
             });
         }
-
         async function saveExitTiers() {
             const rows = document.querySelectorAll('.tier-row');
             const tiers = [];
@@ -469,450 +281,249 @@
                 const min = parseInt(row.querySelector('.tier-min').value);
                 const max = row.querySelector('.tier-max').disabled ? currentMaxHoldDays : parseInt(row.querySelector('.tier-max').value);
                 const pnl = parseFloat(row.querySelector('.tier-pnl').value) / 100;
-
-                if (min < currentMaxHoldDays) {
-                    tiers.push({ days_min: min, days_max: max, target_pnl: pnl });
-                }
+                if (min < currentMaxHoldDays) tiers.push({ days_min: min, days_max: max, target_pnl: pnl });
             });
-
             const btn = document.getElementById('save-tiers-btn');
-            const originalText = '保存梯度';
-            btn.innerText = '上传中...';
-
-            const res = await fetch('/api/exit_tiers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tiers })
-            });
-
-            if (res.ok) {
-                btn.innerText = '已保存';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            } else {
-                btn.innerText = '传输错误';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            }
+            const originalText = '部署阶梯配置'; btn.innerText = '同步中...';
+            const res = await fetch('/api/exit_tiers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tiers }) });
+            btn.innerText = res.ok ? '已部署' : '失败';
+            setTimeout(() => btn.innerText = originalText, 2000);
         }
-
         async function fetchAlerts() {
             try {
                 const res = await fetch('/api/alerts');
                 const data = await res.json();
                 const container = document.getElementById('alerts-container');
-
                 if (!data.alerts || data.alerts.length === 0) {
-                    container.innerHTML = '<div class="text-white/20 italic py-2 uppercase">通讯链路正常: 暂无系统警报</div>';
+                    container.innerHTML = '<div class="text-gray-300 text-center py-4 text-xs">暂无活跃系统警报</div>';
                     return;
                 }
-
                 container.innerHTML = '';
                 data.alerts.forEach(alert => {
                     const div = document.createElement('div');
-                    const levelColor = alert.level === 'ERROR' ? 'text-crimson-red' : (alert.level === 'WARN' ? 'text-electric-orange' : 'text-neon-cyan');
+                    const colorClasses = alert.level === 'ERROR' ? 'text-red-500 bg-red-50' : (alert.level === 'WARN' ? 'text-orange-500 bg-orange-50' : 'text-blue-500 bg-blue-50');
                     const timeStr = alert.timestamp.includes(' ') ? alert.timestamp.split(' ')[1] : (alert.timestamp.includes('T') ? alert.timestamp.split('T')[1].split('.')[0] : alert.timestamp);
-                    div.className = "py-1.5 border-b border-white/[0.03] last:border-0";
-                    div.innerHTML = `<span class="text-white/20 mr-2">${timeStr}</span> 
-                                     <span class="${levelColor} font-black">[${alert.level}]</span> 
-                                     <span class="text-white/60 ml-2">${alert.message}</span>`;
+                    div.className = `p-3 mb-2 rounded-xl border border-gray-50 flex items-start space-x-3`;
+                    div.innerHTML = `<span class="text-[10px] text-gray-400 shrink-0 mt-0.5">${timeStr}</span> 
+                                     <div class="flex-1 text-xs">
+                                         <span class="font-bold px-1.5 py-0.5 rounded text-[9px] mr-1 uppercase ${colorClasses}">${alert.level}</span>
+                                         <span class="text-gray-600 leading-relaxed">${alert.message}</span>
+                                     </div>`;
                     container.appendChild(div);
                 });
             } catch (e) {
                 console.error(e);
-                document.getElementById('alerts-container').innerHTML = '<div class="text-crimson-red italic py-2 uppercase">通讯链路异常: 无法连接 API</div>';
+                document.getElementById('alerts-container').innerHTML = '<div class="text-red-400 text-center py-4 text-xs font-medium">通讯链路异常: 无法连接后端数据节点</div>';
             }
         }
-
-        async function saveBuySettings(e) {
+        async function handleFormSubmit(e, btnId, originalText) {
             e.preventDefault();
+            const btn = document.getElementById(btnId);
+            btn.innerText = '保存中...';
             const form = new FormData(e.target);
-            const data = Object.fromEntries(form.entries());
-            if (data.entry_drop_pct) data.entry_drop_pct = parseFloat(data.entry_drop_pct) / 100;
-            if (data.roll_drop_pct) data.roll_drop_pct = parseFloat(data.roll_drop_pct) / 100;
-            if (data.target_delta) data.target_delta = parseFloat(data.target_delta);
-            if (data.delta_tolerance) data.delta_tolerance = parseFloat(data.delta_tolerance);
-            if (data.max_option_spread) data.max_option_spread = parseFloat(data.max_option_spread) / 100;
-            if (data.min_expiry_days) data.min_expiry_days = parseInt(data.min_expiry_days);
-            if (data.max_positions) data.max_positions = parseInt(data.max_positions);
+            let data = Object.fromEntries(form.entries());
+            if (data.entry_drop_pct) data.entry_drop_pct /= 100;
+            if (data.roll_drop_pct) data.roll_drop_pct /= 100;
+            if (data.max_option_spread) data.max_option_spread /= 100;
+            if (data.auto_invest_min_threshold) data.auto_invest_min_threshold = parseFloat(data.auto_invest_min_threshold);
+            if (data.time_exit_days) currentMaxHoldDays = data.time_exit_days = parseInt(data.time_exit_days);
 
-            const btn = document.getElementById('save-buy-btn');
-            const originalText = '[ 同步配置协议 ]';
-            btn.innerText = '执行中...';
-            const res = await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) {
-                btn.innerText = '已保存';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            } else {
-                btn.innerText = '保存失败';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            }
+            try {
+                const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                btn.innerText = res.ok ? '已保存' : '错误';
+                if (res.ok && btnId === 'save-sell-btn') updateExitTiersDisplay();
+            } catch { btn.innerText = '异常'; }
+            setTimeout(() => btn.innerText = originalText, 2000);
         }
-
-        async function saveSellSettings(e) {
-            e.preventDefault();
-            const form = new FormData(e.target);
-            const data = Object.fromEntries(form.entries());
-            if (data.time_exit_days) {
-                data.time_exit_days = parseInt(data.time_exit_days);
-                currentMaxHoldDays = data.time_exit_days;
-                updateExitTiersDisplay();
-            }
-
-            const btn = document.getElementById('save-sell-btn');
-            const originalText = '[ 更新卖出逻辑 ]';
-            btn.innerText = '执行中...';
-            const res = await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) {
-                btn.innerText = '已保存';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            } else {
-                btn.innerText = '保存失败';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            }
-        }
-
         setInterval(fetchStatus, 3000);
         setInterval(fetchAlerts, 5000);
-
         window.onload = function () {
-            fetchStatus();
-            fetchExitTiers();
-            fetchAlerts();
-
-            async function saveProfitSettings(e) {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const settings = {
-                    auto_invest_qqqm: parseInt(formData.get('auto_invest_qqqm')),
-                    auto_invest_min_threshold: parseFloat(formData.get('auto_invest_min_threshold'))
-                };
-
-                const btn = document.getElementById('save-profit-btn');
-                const originalText = '[ 同步循环参数 ]';
-                btn.innerText = '写入中...';
-
-                try {
-                    const res = await fetch('/api/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(settings)
-                    });
-                    if (res.ok) {
-                        btn.innerText = '已保存';
-                        setTimeout(() => btn.innerText = originalText, 2000);
-                        fetchStatus();
-                    } else {
-                        btn.innerText = 'IO 错误';
-                        setTimeout(() => btn.innerText = originalText, 2000);
-                    }
-                } catch (err) {
-                    btn.innerText = '超时错误';
-                    setTimeout(() => btn.innerText = originalText, 2000);
-                }
-            }
-
-            document.getElementById('buy-form').onsubmit = saveBuySettings;
-            document.getElementById('sell-form').onsubmit = saveSellSettings;
-            document.getElementById('profit-form').onsubmit = saveProfitSettings;
-
-            // Re-sync tiers display if manual input changes
+            fetchStatus(); fetchExitTiers(); fetchAlerts();
+            document.getElementById('buy-form').onsubmit = (e) => handleFormSubmit(e, 'save-buy-btn', '同步配置协议');
+            document.getElementById('sell-form').onsubmit = (e) => handleFormSubmit(e, 'save-sell-btn', '更新卖出逻辑');
+            document.getElementById('profit-form').onsubmit = (e) => handleFormSubmit(e, 'save-profit-btn', '同步循环参数');
             document.forms['sell-form'].time_exit_days.addEventListener('input', (e) => {
                 currentMaxHoldDays = parseInt(e.target.value) || 0;
                 updateExitTiersDisplay();
             });
+            setInterval(() => {
+                document.getElementById('sys-time').innerText = new Date().toTimeString().split(' ')[0];
+            }, 1000);
         };
     </script>
 </head>
 
-<body>
-    <div class="grid-bg"></div>
-    <div class="grain"></div>
-
-    <!-- Navigation Overlay -->
-    <nav class="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-8">
-                <div class="header-font text-white text-xl tracking-tighter flex items-center">
-                    <span class="text-neon-cyan mr-2">//</span> QQQ LEAPS 战略终端
-                    <span class="ml-3 text-[10px] bg-white/10 px-2 py-0.5 font-bold rounded">V2.5</span>
-                </div>
-                <div class="flex items-center space-x-4 border-l border-white/10 pl-8">
-                    <div id="conn-dot"
-                        class="w-2 h-2 rounded-full bg-crimson-red shadow-[0_0_10px_rgba(220,20,60,0.5)]"></div>
-                    <span id="conn-text"
-                        class="text-[9px] font-black uppercase tracking-widest text-crimson-red">终端离线</span>
-                </div>
+<body class="pb-20">
+    <nav class="apple-glass sticky top-0 z-50 px-6 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center space-x-6">
+            <h1 class="text-lg font-bold tracking-tight text-gray-900">QQQ LEAPS <span class="text-blue-600">管理后台</span>
+            </h1>
+            <div class="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
+                <span id="conn-dot" class="status-dot bg-gray-300"></span>
+                <span id="conn-text" class="text-[10px] font-semibold text-gray-500 uppercase">API 连接检测中</span>
             </div>
-            <div class="flex items-center space-x-6">
-                <div class="text-[10px] text-white/30 font-bold uppercase tracking-widest">
-                    同步时间: <span id="sys-time" class="text-white/60">00:00:00</span>
-                </div>
-                <form action="/logout" method="POST" class="m-0">
-                    <button
-                        class="text-[9px] font-black uppercase tracking-[0.3em] hover:text-neon-cyan transition-colors">
-                        [ 终止会话_Terminate ]
-                    </button>
-                </form>
+        </div>
+        <div class="flex items-center space-x-6 text-[12px] text-gray-400">
+            <div class="hidden sm:block">系统时间: <span id="sys-time" class="font-medium text-gray-600">00:00:00</span>
             </div>
+            <form action="/logout" method="POST" class="m-0">
+                <button
+                    class="bg-white border border-gray-200 px-4 py-1.5 rounded-full hover:bg-gray-50 transition-colors font-medium text-gray-600">退出登录</button>
+            </form>
         </div>
     </nav>
 
-    <div class="container mx-auto p-6 space-y-10">
-        <!-- Summary Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="industrial-panel p-5 reveal" style="animation-delay: 0.1s">
-                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
-                    资产净值 <span class="text-neon-cyan">01</span>
-                </div>
-                <div id="net-liq" class="text-3xl font-bold tracking-tighter text-white font-mono">$0,000.00</div>
-                <div class="mt-4 h-1 bg-white/5 w-full">
-                    <div class="h-full bg-neon-cyan w-1/3 shadow-[0_0_10px_var(--neon-cyan)] opacity-50"></div>
-                </div>
+    <main class="container mx-auto px-6 mt-10 space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="apple-card p-6">
+                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">资产净值</div>
+                <div id="net-liq" class="text-2xl font-bold text-gray-900 font-mono">$0.00</div>
             </div>
-            <div class="industrial-panel p-5 reveal border-l-matrix-green/50" style="animation-delay: 0.2s">
-                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
-                    可用现金 <span class="text-matrix-green">02</span>
-                </div>
-                <div id="cash-balance" class="text-3xl font-bold tracking-tighter text-matrix-green font-mono">$0,000.00
-                </div>
-                <div class="mt-4 h-1 bg-white/5 w-full">
-                    <div class="h-full bg-matrix-green w-1/2 shadow-[0_0_10px_var(--matrix-green)] opacity-50"></div>
-                </div>
+            <div class="apple-card p-6">
+                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">可用现金</div>
+                <div id="cash-balance" class="text-2xl font-bold text-green-600 font-mono">$0.00</div>
             </div>
-            <div class="industrial-panel p-5 reveal border-l-electric-orange/50" style="animation-delay: 0.3s">
-                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
-                    当前购买力 <span class="text-electric-orange">03</span>
-                </div>
-                <div id="buying-power" class="text-3xl font-bold tracking-tighter text-electric-orange font-mono">
-                    $0,000.00</div>
-                <div class="mt-4 h-1 bg-white/5 w-full">
-                    <div class="h-full bg-electric-orange w-2/3 shadow-[0_0_10px_var(--electric-orange)] opacity-50">
-                    </div>
-                </div>
+            <div class="apple-card p-6">
+                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">当前购买力</div>
+                <div id="buying-power" class="text-2xl font-bold text-orange-500 font-mono">$0.00</div>
             </div>
-            <div class="industrial-panel p-5 reveal" style="animation-delay: 0.4s; border-left: 2px solid #a855f7;">
-                <div class="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3 flex justify-between">
-                    利润池 (定投) <span class="text-[#a855f7]">04</span>
-                </div>
-                <div id="profit-pool" class="text-3xl font-bold tracking-tighter text-white font-mono">$0.00</div>
-                <div id="invested-info" class="text-[8px] font-bold text-white/20 mt-2 uppercase">追踪状态: 等待中
-                </div>
+            <div class="apple-card p-6 border-l-4 border-purple-400">
+                <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">已实现利润 (再投资)</div>
+                <div id="profit-pool" class="text-2xl font-bold text-gray-900 font-mono">$0.00</div>
+                <div id="invested-info" class="text-[10px] text-gray-400 mt-1">系统就绪</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left: Strategic Data -->
-            <div class="lg:col-span-2 space-y-8">
-                <div class="industrial-panel reveal" style="animation-delay: 0.5s">
-                    <div class="panel-header">
-                        <h2 class="text-sm font-black flex items-center tracking-widest">
-                            <span class="w-1.5 h-1.5 bg-neon-cyan mr-3 rotate-45"></span>
-                            核心策略持仓 (LEAPS)
-                        </h2>
-                        <div class="status-tag pnl-positive">运行中</div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-8 space-y-8">
+                <section class="apple-card overflow-hidden">
+                    <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="font-bold text-sm text-gray-800">LEAPS 期权核心持仓</h2>
+                        <span class="text-[10px] uppercase font-bold text-gray-400">实时更新中</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-50/30 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                 <tr>
-                                    <th class="p-4 border-r border-white/5">代码</th>
-                                    <th class="p-4 border-r border-white/5">合约ID</th>
-                                    <th class="p-4 border-r border-white/5">买入日期</th>
-                                    <th class="p-4 border-r border-white/5">开仓价格</th>
-                                    <th class="p-4 border-r border-white/5">数量</th>
-                                    <th class="p-4 border-r border-white/5">未实现盈亏</th>
-                                    <th class="p-4">状态</th>
+                                    <th class="px-6 py-4">代码</th>
+                                    <th class="px-6 py-4 text-xs font-normal">合约ID</th>
+                                    <th class="px-6 py-4">买入日期</th>
+                                    <th class="px-6 py-4">开仓价</th>
+                                    <th class="px-6 py-4">数量</th>
+                                    <th class="px-6 py-4">未结盈亏</th>
+                                    <th class="px-6 py-4 text-right">状态</th>
                                 </tr>
                             </thead>
-                            <tbody id="pos-body" class="text-[11px] font-mono">
-                                <!-- Data -->
-                            </tbody>
+                            <tbody id="pos-body"></tbody>
                         </table>
                     </div>
-                </div>
+                </section>
 
-                <div class="industrial-panel reveal" style="animation-delay: 0.6s">
-                    <div class="panel-header">
-                        <h2 class="text-sm font-black flex items-center tracking-widest">
-                            <span class="w-1.5 h-1.5 bg-electric-orange mr-3 rotate-45"></span>
-                            账户综合资产报告
-                        </h2>
+                <section class="apple-card overflow-hidden">
+                    <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
+                        <h2 class="font-bold text-sm text-gray-800">账户综合资产报告</h2>
                     </div>
-                    <div class="overflow-x-auto custom-scrollbar" style="max-height: 400px;">
-                        <table class="w-full text-left">
+                    <div class="overflow-x-auto custom-scroll" style="max-height: 400px;">
+                        <table class="w-full text-left text-sm">
                             <thead
-                                class="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 sticky top-0 z-10">
+                                class="bg-gray-50/30 text-[10px] font-bold text-gray-400 uppercase sticky top-0 backdrop-blur-md">
                                 <tr>
-                                    <th class="p-4">资产名</th>
-                                    <th class="p-4">类型</th>
-                                    <th class="p-4 text-center">持仓量</th>
-                                    <th class="p-4 text-center">当前价格</th>
-                                    <th class="p-4">盈亏</th>
-                                    <th class="p-4 text-right">市值</th>
+                                    <th class="px-6 py-4">资产名</th>
+                                    <th class="px-6 py-4">类型</th>
+                                    <th class="px-6 py-4">持仓量</th>
+                                    <th class="px-6 py-4">市价</th>
+                                    <th class="px-6 py-4">盈亏</th>
+                                    <th class="px-6 py-4 text-right">总市值</th>
                                 </tr>
                             </thead>
-                            <tbody id="portfolio-body" class="text-[11px] font-mono">
-                                <!-- Data -->
-                            </tbody>
+                            <tbody id="portfolio-body"></tbody>
                         </table>
                     </div>
-                </div>
+                </section>
             </div>
 
-            <!-- Right: Command & Control -->
-            <div class="space-y-8">
-                <div class="industrial-panel p-6 reveal border-l-2 border-neon-cyan" style="animation-delay: 0.7s">
-                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4">
-                        买入/ROLL 核心配置
-                    </h2>
-                    <form id="buy-form" class="space-y-6">
+            <div class="lg:col-span-4 space-y-8">
+                <section class="apple-card p-6 space-y-6">
+                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4">策略入场与转仓设置</h3>
+                    <form id="buy-form" class="space-y-5">
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">入场跌幅 %</label>
-                                <input name="entry_drop_pct" type="number" step="0.1"
-                                    class="brutalist-input border-neon-cyan/20">
-                            </div>
-                            <div>
-                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">ROLL 跌幅 %</label>
-                                <input name="roll_drop_pct" type="number" step="0.1"
-                                    class="brutalist-input border-electric-orange/20">
-                            </div>
+                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">入场跌幅
+                                    %</label><input name="entry_drop_pct" type="number" step="0.1"
+                                    class="apple-input w-full"></div>
+                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">ROLL 跌幅
+                                    %</label><input name="roll_drop_pct" type="number" step="0.1"
+                                    class="apple-input w-full"></div>
                         </div>
-
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">目标 Delta</label>
-                                <input name="target_delta" type="number" step="0.01" class="brutalist-input">
-                            </div>
-                            <div>
-                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">Delta 容错率</label>
-                                <input name="delta_tolerance" type="number" step="0.01" class="brutalist-input">
-                            </div>
+                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">目标
+                                    Delta</label><input name="target_delta" type="number" step="0.01"
+                                    class="apple-input w-full"></div>
+                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">Delta
+                                    容错</label><input name="delta_tolerance" type="number" step="0.01"
+                                    class="apple-input w-full"></div>
                         </div>
-
-                        <div>
-                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">最大买入价差 %
-                                (流动性守卫)</label>
-                            <input name="max_option_spread" type="number" step="1" class="brutalist-input">
-                        </div>
-
+                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最大点差 %
+                                (流动性)</label><input name="max_option_spread" type="number" step="1"
+                                class="apple-input w-full"></div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">最小到期天数</label>
-                                <input name="min_expiry_days" type="number" class="brutalist-input">
-                            </div>
-                            <div>
-                                <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">最大持仓笔数</label>
-                                <input name="max_positions" type="number" class="brutalist-input">
-                            </div>
+                            <div><label
+                                    class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最小到期天数</label><input
+                                    name="min_expiry_days" type="number" class="apple-input w-full"></div>
+                            <div><label
+                                    class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最大持仓笔数</label><input
+                                    name="max_positions" type="number" class="apple-input w-full"></div>
                         </div>
-
-                        <button id="save-buy-btn" type="submit" class="action-btn w-full py-4 mt-2">
-                            [ 同步配置协议 ]
-                        </button>
+                        <button id="save-buy-btn" class="apple-btn w-full py-3">保存策略设置</button>
                     </form>
-                </div>
+                </section>
 
-                <!-- Sell & Tier Settings -->
-                <div class="industrial-panel p-6 reveal border-l-2 border-crimson-red" style="animation-delay: 0.8s">
-                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4">
-                        止盈与调仓风控
-                    </h2>
-                    <form id="sell-form" class="space-y-6 mb-10">
-                        <div>
-                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">强制平仓天数
-                                (Force_Exit)</label>
-                            <input name="time_exit_days" type="number" class="brutalist-input border-crimson-red/20">
-                            <p class="text-[8px] text-white/20 mt-2 uppercase font-black">到达天数阈值后将自动市价平仓。</p>
-                        </div>
-                        <button id="save-sell-btn" type="submit"
-                            class="action-btn w-full border-crimson-red text-crimson-red hover:bg-crimson-red">
-                            [ 更新卖出逻辑 ]
-                        </button>
+                <section class="apple-card p-6 space-y-6">
+                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4">止盈与风险管理设置</h3>
+                    <form id="sell-form" class="space-y-4">
+                        <div><label
+                                class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">强制平仓天数</label><input
+                                name="time_exit_days" type="number" class="apple-input w-full"></div>
+                        <button id="save-sell-btn" class="apple-btn w-full bg-red-500">更新设置</button>
                     </form>
-
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center border-b border-white/5 pb-3">
-                            <h3 class="text-[10px] font-black text-white/60 uppercase tracking-widest">阶梯止盈协议
-                                (Profit_Tiers)</h3>
-                            <button onclick="addTierRow()"
-                                class="text-[9px] bg-white/5 hover:bg-white/10 text-white px-2 py-1 font-bold uppercase transition-colors border border-white/10">
-                                + 增加阶梯
-                            </button>
+                    <div class="pt-4 border-t border-gray-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">分段止盈策略</span>
+                            <button onclick="addTierRow()" class="text-blue-600 text-[10px] font-bold">+ 添加分段</button>
                         </div>
-                        <table class="w-full text-[10px] font-mono">
-                            <thead>
-                                <tr class="text-left text-white/30 uppercase">
-                                    <th class="p-2 pl-0">天数范围</th>
-                                    <th class="p-2">目标盈亏 %</th>
-                                    <th class="p-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="tiers-body">
-                                <!-- Data -->
-                            </tbody>
+                        <table class="w-full text-xs">
+                            <tbody id="tiers-body"></tbody>
                         </table>
                         <button id="save-tiers-btn" onclick="saveExitTiers()"
-                            class="action-btn w-full border-matrix-green text-matrix-green hover:bg-matrix-green py-2 text-[10px]">
-                            [ 部署阶梯配置 ]
-                        </button>
+                            class="apple-btn w-full mt-4 bg-green-600">应用分段策略</button>
                     </div>
-                </div>
+                </section>
 
-                <!-- Profit Recycling -->
-                <div class="industrial-panel p-6 reveal border-l-2 border-[#a855f7]" style="animation-delay: 0.9s">
-                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4">
-                        利润定投枢纽
-                    </h2>
-                    <form id="profit-form" class="space-y-6">
-                        <div>
-                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">自动定投 QQQM</label>
-                            <select name="auto_invest_qqqm" class="brutalist-input appearance-none cursor-pointer">
-                                <option value="0">// 模块已禁用</option>
-                                <option value="1">// 循环模式已开启</option>
+                <section class="apple-card p-6 space-y-4">
+                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4">利润再投资设置</h3>
+                    <form id="profit-form" class="space-y-4">
+                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">自动再投资
+                                QQQM</label>
+                            <select name="auto_invest_qqqm" class="apple-input w-full appearance-none bg-white">
+                                <option value="0">已禁用</option>
+                                <option value="1">已开启</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="text-[8px] font-bold text-white/40 uppercase mb-2 block">定投资金阈值 ($)</label>
-                            <input name="auto_invest_min_threshold" type="number" step="10" class="brutalist-input">
-                        </div>
-                        <button id="save-profit-btn" type="submit"
-                            class="action-btn w-full border-[#a855f7] text-[#a855f7] hover:bg-[#a855f7]">
-                            [ 同步循环参数 ]
-                        </button>
+                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">再投资金额阈值
+                                ($)</label><input name="auto_invest_min_threshold" type="number"
+                                class="apple-input w-full shadow-inner"></div>
+                        <button id="save-profit-btn" class="apple-btn w-full bg-purple-600">保存投资参数</button>
                     </form>
-                </div>
+                </section>
 
-                <!-- System Notifications -->
-                <div class="industrial-panel p-6 reveal border-l-2 border-white/10" style="animation-delay: 1s">
-                    <h2 class="text-lg font-black mb-6 tracking-tighter border-b border-white/5 pb-4 text-white/60">
-                        通讯链路系统报警
-                    </h2>
-                    <div id="alerts-container"
-                        class="space-y-1 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar font-mono text-[9px]">
-                        <div class="text-white/20 italic py-2 uppercase">正在建立通讯链接...</div>
+                <section class="apple-card p-6">
+                    <h3 class="font-bold text-sm text-gray-400 uppercase tracking-widest mb-6">系统运行日志</h3>
+                    <div id="alerts-container" class="max-h-[300px] overflow-y-auto custom-scroll pr-2">
+                        <div class="text-gray-300 italic text-center text-xs py-4">正在建立通讯链接...</div>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
-    </div>
-
-    <script>
-        // System Clock
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('sys-time').innerText = now.toTimeString().split(' ')[0];
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
-    </script>
+    </main>
 </body>
 
 </html>
