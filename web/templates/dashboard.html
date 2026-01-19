@@ -157,6 +157,7 @@
                     bf.max_option_spread.value = (data.settings.max_option_spread * 100).toFixed(0);
                     bf.min_expiry_days.value = data.settings.min_expiry_days;
                     bf.max_positions.value = data.settings.max_positions;
+                    bf.order_quantity.value = data.settings.order_quantity || 1;
                     bf.dataset.filled = "true";
                 }
                 if (data.settings && data.settings.auto_invest_min_threshold !== undefined && !document.forms['profit-form'].dataset.filled) {
@@ -342,6 +343,7 @@
             if (data.max_option_spread !== undefined) data.max_option_spread = parseFloat(data.max_option_spread) / 100;
             if (data.min_expiry_days !== undefined) data.min_expiry_days = parseInt(data.min_expiry_days);
             if (data.max_positions !== undefined) data.max_positions = parseInt(data.max_positions);
+            if (data.order_quantity !== undefined) data.order_quantity = parseInt(data.order_quantity);
             if (data.time_exit_days !== undefined) {
                 data.time_exit_days = parseInt(data.time_exit_days);
                 currentMaxHoldDays = data.time_exit_days;
@@ -496,6 +498,9 @@
                                     class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最大持仓笔数</label><input
                                     name="max_positions" type="number" class="apple-input w-full"></div>
                         </div>
+                        <div><label
+                                class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">单次下单数量</label><input
+                                name="order_quantity" type="number" class="apple-input w-full"></div>
                         <button id="save-buy-btn" class="apple-btn w-full py-3">保存策略设置</button>
                     </form>
                 </section>

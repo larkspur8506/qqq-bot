@@ -102,6 +102,7 @@ class Strategy:
         self.settings['qqqm_invested_capital'] = await self.db.get_setting('qqqm_invested_capital', 0.0)
         self.settings['auto_invest_qqqm'] = await self.db.get_setting('auto_invest_qqqm', 0)
         self.settings['auto_invest_min_threshold'] = await self.db.get_setting('auto_invest_min_threshold', 500.0)
+        self.settings['order_quantity'] = await self.db.get_setting('order_quantity', 1)
     async def run_cycle(self):
         """
         The main logic executed every 5 minutes.
@@ -141,7 +142,8 @@ class Strategy:
             await self.process_roll_signal()
         elif pct_change <= entry_drop_trigger:
             logger.info(f"[Signal] DROP DETECTED: {pct_change:.2%} <= {entry_drop_trigger:.2%}")
-            await self.process_entry_signal()
+            order_qty = self.settings.get('order_quantity', 1)
+            await self.process_entry_signal(quantity=order_qty)
         else:
             logger.info("[Signal] No entry signal.")
 
