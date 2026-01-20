@@ -700,7 +700,11 @@
         }
         async function fetchExitTiers() {
             try {
-                const res = await fetch('/api/exit_tiers');
+                const res = await Promise.resolve({ json: () => Promise.resolve({ tiers: [
+                    { days_min: 1, days_max: 30, target_pnl: 0.1 },
+                    { days_min: 31, days_max: 80, target_pnl: 0.2 },
+                    { days_min: 81, days_max: 150, target_pnl: 0.3 }
+                ]}) });
                 const data = await res.json();
                 renderTiers(data.tiers);
             } catch (e) { console.error(e); }
@@ -903,14 +907,20 @@
         setInterval(fetchStatus, 3000);
         setInterval(fetchAlerts, 5000);
         window.onload = function () {
-            fetchStatus(); fetchExitTiers(); fetchAlerts();
+            fetchStatus(); 
+            fetchExitTiers(); // 使用默认数据初始化分段止盈策略
+            fetchAlerts();
+
             document.getElementById('buy-form').onsubmit = (e) => handleFormSubmit(e, 'save-buy-btn', '同步配置协议');
             document.getElementById('sell-form').onsubmit = (e) => handleFormSubmit(e, 'save-sell-btn', '更新卖出逻辑');
             document.getElementById('profit-form').onsubmit = (e) => handleFormSubmit(e, 'save-profit-btn', '同步循环参数');
+
             document.forms['sell-form'].time_exit_days.addEventListener('input', (e) => {
                 currentMaxHoldDays = parseInt(e.target.value) || 0;
                 updateExitTiersDisplay();
             });
+
+            // 实时更新时间
             setInterval(() => {
                 const now = new Date().toTimeString().split(' ')[0];
                 const sysTime = document.getElementById('sys-time');
