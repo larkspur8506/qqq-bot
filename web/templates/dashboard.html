@@ -700,11 +700,10 @@
         }
         async function fetchExitTiers() {
             try {
-                const res = await Promise.resolve({ json: () => Promise.resolve({ tiers: [
-                    { days_min: 1, days_max: 30, target_pnl: 0.1 },
-                    { days_min: 31, days_max: 80, target_pnl: 0.2 },
-                    { days_min: 81, days_max: 150, target_pnl: 0.3 }
-                ]}) });
+                const res = await fetch('/api/exit_tiers');
+                if (!res.ok) {
+                    throw new Error('无法加载默认分段数据');
+                }
                 const data = await res.json();
                 renderTiers(data.tiers);
             } catch (e) { console.error(e); }
@@ -748,40 +747,41 @@
             updateExitTiersDisplay();
         }
         function addTierRow() {
-            const tbody = document.getElementById('tiers-body');
-            const containers = tbody.querySelectorAll('.apple-card');
-            let lastMax = 0;
-            if (containers.length > 0) {
-                const prevLastMax = containers[containers.length - 1].querySelector('#tier-max');
-                prevLastMax.disabled = false;
-                lastMax = parseInt(prevLastMax.value) || 0;
-            }
-            const tr = document.createElement('tr');
-            tr.className = "tier-row border-b border-gray-50";
-            tr.innerHTML = `
-                <td class="py-2">
-                    <div class="flex items-center tier-input-group">
-                        <span class="text-[10px] sm:hidden font-bold text-label mr-2">持有天数:</span>
-                        <div class="flex items-center space-x-1 flex-1">
-                            <input type="number" class="tier-min apple-input text-center px-1 font-numeric" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input text-center px-1 font-numeric" value="${currentMaxHoldDays}" disabled>
-                        </div>
-                    </div>
-                </td>
-                <td class="py-2">
-                    <div class="flex items-center tier-pnl-group">
-                        <span class="text-[10px] sm:hidden font-bold text-label mr-2">目标盈亏:</span>
-                        <div class="flex items-center space-x-1 flex-1">
-                            <input type="number" class="tier-pnl apple-input text-center px-1 font-bold text-positive font-numeric" value="10"><span class="text-[10px] text-label-light font-bold">%</span>
-                        </div>
-                    </div>
-                </td>
-                <td class="py-2 text-right">
-                    <button onclick="removeTierRow(this)" class="bg-red-50 text-red-500 rounded-lg px-4 py-1.5 text-xs font-bold sm:bg-transparent sm:p-0 sm:text-lg">删除分段</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-            updateExitTiersDisplay();
-        }
+    const tbody = document.getElementById('tiers-body');
+    const cards = tbody.querySelectorAll('.apple-card');
+    let lastMax = 0;
+
+    if (cards.length > 0) {
+        const prevLastMax = cards[cards.length - 1].querySelector('#tier-max');
+        prevLastMax.disabled = false;
+        lastMax = parseInt(prevLastMax.value) || 0;
+    }
+
+    const card = document.createElement('div');
+    card.className = "apple-card rounded-lg p-4 shadow-md bg-gray-50 mb-3";
+    card.innerHTML = `
+        <div class="flex items-center justify-between">
+            <div class="flex flex-col">
+                <span class="text-gray-700 text-xs">持有天数：</span>
+                <div class="flex items-center mt-2">
+                    <input id="tier-min" class="apple-input w-16 h-8 px-2 text-xs font-numeric" type="number" value="${lastMax + 1}">
+                    <span class="mx-2">-</span>
+                    <input id="tier-max" class="apple-input w-16 h-8 px-2 text-xs font-numeric" type="number" value="${currentMaxHoldDays}" disabled>
+                </div>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-gray-700 text-xs">目标盈亏 (%):</span>
+                <div class="mt-2">
+                    <input id="tier-target-pnl" class="apple-input w-16 h-8 px-2 text-xs font-numeric" type="number" value="10">
+                </div>
+            </div>
+            <button onclick="removeTierRow(this)" class="apple-btn-danger text-white text-xs px-2 py-1.5 rounded-md">删除</button>
+        </div>
+    `;
+
+    tbody.appendChild(card);
+    updateExitTiersDisplay();
+}
         function removeTierRow(btn) {
             btn.closest('.apple-card').remove();
             const cards = document.querySelectorAll('.apple-card');
@@ -793,27 +793,32 @@
             }
         }
         function updateExitTiersDisplay() {
-            const cards = document.querySelectorAll('.apple-card');
-            cards.forEach((card, idx) => {
-                const minInput = card.querySelector('#tier-min');
-                const maxInput = card.querySelector('#tier-max');
-                const min = parseInt(minInput.value);
-                const isLast = idx === cards.length - 1;
+    console.log("[updateExitTiersDisplay] Updating display states..."); // Debugging log
+    const cards = document.querySelectorAll('.apple-card');
+    cards.forEach((card, idx) => {
+        const minInput = card.querySelector('#tier-min');
+        const maxInput = card.querySelector('#tier-max');
+        const min = parseInt(minInput.value);
+        const isLast = idx === cards.length - 1;
 
-                if (isLast) {
-                    maxInput.value = currentMaxHoldDays;
-                    maxInput.disabled = true;
-                }
-
-                if (min >= currentMaxHoldDays) {
-                    card.classList.add('opacity-30', 'grayscale');
-                    card.title = "时间越限";
-                } else {
-                    card.classList.remove('opacity-30', 'grayscale');
-                    card.title = "";
-                }
-            });
+        if (isLast) {
+            maxInput.value = currentMaxHoldDays;
+            maxInput.disabled = true;
         }
+
+        if (min >= currentMaxHoldDays) {
+            card.classList.add('opacity-30', 'grayscale');
+            card.title = "时间越限";
+            minInput.disabled = true; // Disable input for invalid segment
+            maxInput.disabled = true; // Disable input for invalid segment
+        } else {
+            card.classList.remove('opacity-30', 'grayscale');
+            card.title = "";
+            minInput.disabled = false; // Enable input for valid segment
+            maxInput.disabled = idx === cards.length - 1; // Only the last max is disabled
+        }
+    });
+}
         async function saveExitTiers() {
             const cards = document.querySelectorAll('.apple-card');
             const tiers = [];
