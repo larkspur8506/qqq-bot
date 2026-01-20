@@ -8,85 +8,164 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ========================================
+           Apple Design System v2.5 Unified
+           所有页面共享的统一样式
+        ======================================== */
+
+        /* --- Color System (语义化颜色) --- */
         :root {
             --apple-blue: #0071E3;
-            --apple-green: #34c759;
-            --apple-red: #ff3b30;
-            --apple-orange: #ff9500;
-            --apple-gray: #F5F5F7;
+            --apple-green: #248A3D;
+            --apple-red: #C9342C;
+            --apple-orange: #FF9500;
+            --apple-purple: #AF52DE;
+            --apple-bg: #F5F5F7;
+            --apple-text: #1D1D1F;
+            --apple-text-secondary: rgba(0, 0, 0, 0.5);
+            --apple-text-tertiary: rgba(0, 0, 0, 0.35);
+            --apple-border: rgba(0, 0, 0, 0.08);
+            --apple-border-focus: rgba(0, 113, 227, 0.25);
         }
 
+        /* --- Typography & Base --- */
         body {
-            background-color: var(--apple-gray);
-            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--apple-bg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
             -webkit-font-smoothing: antialiased;
-            color: #1d1d1f;
+            -moz-osx-font-smoothing: grayscale;
+            color: var(--apple-text);
+            line-height: 1.5;
+            letter-spacing: -0.01em;
         }
 
+        /* 金融数字专用 - 消除数字抖动 */
+        .font-numeric {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" on, "lnum" on;
+        }
+
+        /* --- Glassmorphism Components --- */
         .apple-glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
         }
 
         .apple-card {
-            background: #fff;
+            background: rgba(255, 255, 255, 0.8);
             border-radius: 18px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.03),
+                0 1px 3px rgba(0, 0, 0, 0.04),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        .apple-card:hover {
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, 0.05),
+                0 2px 6px rgba(0, 0, 0, 0.04),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        }
+
+        /* --- Form Controls --- */
         .apple-input {
-            background: #fbfbfd;
-            border: 1px solid #d2d2d7;
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             padding: 10px 14px;
             font-size: 14px;
+            color: var(--apple-text);
             outline: none;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+        }
+
+        .apple-input::placeholder {
+            color: var(--apple-text-tertiary);
+        }
+
+        .apple-input:hover {
+            border-color: rgba(0, 0, 0, 0.15);
         }
 
         .apple-input:focus {
             border-color: var(--apple-blue);
             background: #fff;
-            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+            box-shadow: 0 0 0 4px var(--apple-border-focus);
         }
 
+        /* --- Buttons --- */
         .apple-btn {
             background: var(--apple-blue);
             color: #fff;
+            border: none;
             border-radius: 10px;
             font-weight: 500;
+            font-size: 14px;
             padding: 10px 20px;
-            transition: all 0.2s;
             cursor: pointer;
             text-align: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .apple-btn:hover {
-            opacity: 0.9;
+            background: #0063CC;
             transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .apple-btn:active {
-            transform: scale(0.98);
+            transform: scale(0.97);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .apple-btn-secondary {
-            background: #f5f5f7;
-            color: #1d1d1f;
-            border: 1px solid #d2d2d7;
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--apple-text);
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
+        .apple-btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        .apple-btn-success {
+            background: var(--apple-green);
+        }
+
+        .apple-btn-success:hover {
+            background: #1E7A32;
+        }
+
+        .apple-btn-danger {
+            background: var(--apple-red);
+        }
+
+        .apple-btn-danger:hover {
+            background: #B02A24;
+        }
+
+        /* --- Status Indicators --- */
         .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             display: inline-block;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
         }
 
+        /* --- Semantic Colors --- */
+        .text-positive { color: var(--apple-green); }
+        .text-negative { color: var(--apple-red); }
+        .text-label { color: var(--apple-text-secondary); }
+        .text-label-light { color: var(--apple-text-tertiary); }
+
+        /* --- Scrollbar --- */
         .custom-scroll::-webkit-scrollbar {
             width: 5px;
         }
@@ -96,11 +175,15 @@
         }
 
         .custom-scroll::-webkit-scrollbar-thumb {
-            background: #d2d2d7;
+            background: rgba(0, 0, 0, 0.15);
             border-radius: 10px;
         }
 
-        /* 隐藏数字输入框默认箭头，防止遮挡文字 */
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        /* --- Number Input Fixes --- */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -109,6 +192,24 @@
 
         input[type=number] {
             -moz-appearance: textfield;
+        }
+
+        /* --- Selection --- */
+        ::selection {
+            background: rgba(0, 113, 227, 0.2);
+        }
+
+        /* --- Table Enhancements --- */
+        .apple-table th {
+            font-weight: 600;
+            color: var(--apple-text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .apple-table td {
+            font-variant-numeric: tabular-nums;
         }
     </style>
     <script>
@@ -135,14 +236,14 @@
                 } else {
                     data.positions.forEach(pos => {
                         const tr = document.createElement('tr');
-                        tr.className = "border-b border-gray-50 hover:bg-gray-50 transition-colors";
+                        tr.className = "border-b border-gray-50 hover:bg-gray-30 transition-colors";
                         tr.innerHTML = `
                             <td class="p-4 font-semibold text-blue-600">${pos.symbol}</td>
-                            <td class="p-4 text-xs text-gray-400">${pos.contract_id}</td>
-                            <td class="p-4 text-xs text-gray-500">${pos.entry_date}</td>
-                            <td class="p-4 font-medium">$${pos.entry_price.toFixed(2)}</td>
-                            <td class="p-4">${pos.quantity}</td>
-                            <td class="p-4 text-gray-300">--</td>
+                            <td class="p-4 text-label-light text-xs font-numeric">${pos.contract_id}</td>
+                            <td class="p-4 text-label text-xs">${pos.entry_date}</td>
+                            <td class="p-4 font-medium font-numeric">$${pos.entry_price.toFixed(2)}</td>
+                            <td class="p-4 font-numeric">${pos.quantity}</td>
+                            <td class="p-4 text-label">--</td>
                             <td class="p-4"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-[10px] font-bold">运行中</span></td>
                         `;
                         tbody.appendChild(tr);
@@ -183,15 +284,15 @@
                     pbody.innerHTML = '';
                     data.portfolio.holdings.forEach(h => {
                         const tr = document.createElement('tr');
-                        tr.className = "text-[12px] border-b border-gray-50";
-                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-green-600' : 'text-red-600';
+                        tr.className = "text-[12px] border-b border-gray-50 hover:bg-gray-30 transition-colors";
+                        const pnlColor = h.unrealizedPnL >= 0 ? 'text-positive' : 'text-negative';
                         tr.innerHTML = `
                             <td class="p-3 font-medium">${h.symbol}</td>
-                            <td class="p-3 text-gray-400 uppercase text-[10px]">${h.secType}</td>
+                            <td class="p-3 text-label-light uppercase text-[10px]">${h.secType}</td>
                             <td class="p-3">${h.quantity}</td>
-                            <td class="p-3 text-gray-500">$${h.mktPrice.toFixed(2)}</td>
-                            <td class="p-3 font-bold ${pnlColor}">$${h.unrealizedPnL.toFixed(2)}</td>
-                            <td class="p-3 text-right">$${h.mktValue.toLocaleString()}</td>
+                            <td class="p-3 text-label">$${h.mktPrice.toFixed(2)}</td>
+                            <td class="p-3 font-bold font-numeric ${pnlColor}">$${h.unrealizedPnL.toFixed(2)}</td>
+                            <td class="p-3 text-right font-numeric">$${h.mktValue.toLocaleString()}</td>
                         `;
                         pbody.appendChild(tr);
                     });
@@ -222,20 +323,20 @@
                 tr.innerHTML = `
                     <td class="p-3">
                         <div class="flex items-center space-x-2">
-                            <input type="number" class="tier-min apple-input w-20 text-center px-1" value="${tier.days_min}">
+                            <input type="number" class="tier-min apple-input w-20 text-center px-1 font-numeric" value="${tier.days_min}">
                             <span class="text-gray-300">-</span>
-                            <input type="number" class="tier-max apple-input w-20 text-center px-1" 
+                            <input type="number" class="tier-max apple-input w-20 text-center px-1 font-numeric" 
                                    value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
                         </div>
                     </td>
                     <td class="p-3">
                         <div class="flex items-center space-x-1">
-                            <input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-green-600" value="${(tier.target_pnl * 100).toFixed(0)}">
-                            <span class="text-[10px] text-gray-400 font-bold">%</span>
+                            <input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-positive font-numeric" value="${(tier.target_pnl * 100).toFixed(0)}">
+                            <span class="text-[10px] text-label-light font-bold">%</span>
                         </div>
                     </td>
                     <td class="p-3 text-right">
-                        <button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">&times;</button>
+                        <button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">×</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -254,9 +355,9 @@
             const tr = document.createElement('tr');
             tr.className = "tier-row border-b border-gray-50";
             tr.innerHTML = `
-                <td class="p-3"><div class="flex items-center space-x-2"><input type="number" class="tier-min apple-input w-20 text-center px-1" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input w-20 text-center px-1" value="${currentMaxHoldDays}" disabled></div></td>
-                <td class="p-3"><div class="flex items-center space-x-1"><input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-green-600" value="10"><span class="text-[10px] text-gray-400 font-bold">%</span></div></td>
-                <td class="p-3 text-right"><button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">&times;</button></td>
+                <td class="p-3"><div class="flex items-center space-x-2"><input type="number" class="tier-min apple-input w-20 text-center px-1 font-numeric" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input w-20 text-center px-1 font-numeric" value="${currentMaxHoldDays}" disabled></div></td>
+                <td class="p-3"><div class="flex items-center space-x-1"><input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-positive font-numeric" value="10"><span class="text-[10px] text-label-light font-bold">%</span></div></td>
+                <td class="p-3 text-right"><button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">×</button></td>
             `;
             tbody.appendChild(tr);
             updateExitTiersDisplay();
@@ -307,25 +408,25 @@
                 const data = await res.json();
                 const container = document.getElementById('alerts-container');
                 if (!data.alerts || data.alerts.length === 0) {
-                    container.innerHTML = '<div class="text-gray-300 text-center py-4 text-xs">暂无活跃系统警报</div>';
+                    container.innerHTML = '<div class="text-label-light text-center py-4 text-xs">暂无活跃系统警报</div>';
                     return;
                 }
                 container.innerHTML = '';
                 data.alerts.forEach(alert => {
                     const div = document.createElement('div');
-                    const colorClasses = alert.level === 'ERROR' ? 'text-red-500 bg-red-50' : (alert.level === 'WARN' ? 'text-orange-500 bg-orange-50' : 'text-blue-500 bg-blue-50');
+                    const colorClasses = alert.level === 'ERROR' ? 'text-negative bg-red-50' : (alert.level === 'WARN' ? 'text-orange-500 bg-orange-50' : 'text-blue-500 bg-blue-50');
                     const timeStr = alert.timestamp.includes(' ') ? alert.timestamp.split(' ')[1] : (alert.timestamp.includes('T') ? alert.timestamp.split('T')[1].split('.')[0] : alert.timestamp);
-                    div.className = `p-3 mb-2 rounded-xl border border-gray-50 flex items-start space-x-3`;
-                    div.innerHTML = `<span class="text-[10px] text-gray-400 shrink-0 mt-0.5">${timeStr}</span> 
+                    div.className = `p-3 mb-2 rounded-xl border border-gray-100 flex items-start space-x-3`;
+                    div.innerHTML = `<span class="text-[10px] text-label-light shrink-0 mt-0.5 font-numeric">${timeStr}</span> 
                                      <div class="flex-1 text-xs">
                                          <span class="font-bold px-1.5 py-0.5 rounded text-[9px] mr-1 uppercase ${colorClasses}">${alert.level}</span>
-                                         <span class="text-gray-600 leading-relaxed">${alert.message}</span>
+                                         <span class="text-label leading-relaxed">${alert.message}</span>
                                      </div>`;
                     container.appendChild(div);
                 });
             } catch (e) {
                 console.error(e);
-                document.getElementById('alerts-container').innerHTML = '<div class="text-red-400 text-center py-4 text-xs font-medium">通讯链路异常: 无法连接后端数据节点</div>';
+                document.getElementById('alerts-container').innerHTML = '<div class="text-negative text-center py-4 text-xs font-medium">通讯链路异常: 无法连接后端数据节点</div>';
             }
         }
         async function handleFormSubmit(e, btnId, originalText) {
@@ -387,8 +488,8 @@
                 <span id="conn-text" class="text-[9px] md:text-[10px] font-semibold text-gray-500 uppercase">检测中</span>
             </div>
         </div>
-        <div class="flex items-center space-x-4 md:space-x-6 text-[11px] md:text-[12px] text-gray-400">
-            <div class="hidden xs:block">系统时间: <span id="sys-time" class="font-medium text-gray-600">00:00:00</span>
+        <div class="flex items-center space-x-4 md:space-x-6 text-[11px] md:text-[12px] text-label">
+            <div class="hidden xs:block">系统时间: <span id="sys-time" class="font-medium text-gray-600 font-numeric">00:00:00</span>
             </div>
             <form action="/logout" method="POST" class="m-0">
                 <button
@@ -400,22 +501,22 @@
     <main class="container mx-auto px-4 md:px-6 mt-6 md:mt-10 space-y-6 md:space-y-8">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <div class="apple-card p-4 md:p-6">
-                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">资产净值</div>
-                <div id="net-liq" class="text-xl md:text-2xl font-bold text-gray-900 font-mono">$0.00</div>
+                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">资产净值</div>
+                <div id="net-liq" class="text-xl md:text-2xl font-bold text-gray-900 font-numeric">$0.00</div>
             </div>
             <div class="apple-card p-4 md:p-6">
-                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">可用现金</div>
-                <div id="cash-balance" class="text-xl md:text-2xl font-bold text-green-600 font-mono">$0.00</div>
+                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">可用现金</div>
+                <div id="cash-balance" class="text-xl md:text-2xl font-bold text-positive font-numeric">$0.00</div>
             </div>
             <div class="apple-card p-4 md:p-6">
-                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">当前购买力</div>
-                <div id="buying-power" class="text-xl md:text-2xl font-bold text-orange-500 font-mono">$0.00</div>
+                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">当前购买力</div>
+                <div id="buying-power" class="text-xl md:text-2xl font-bold text-orange-500 font-numeric">$0.00</div>
             </div>
             <div class="apple-card p-4 md:p-6 border-l-4 border-purple-400 col-span-2 lg:col-span-1">
-                <div class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">已实现利润 (再投资)
+                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">已实现利润 (再投资)
                 </div>
-                <div id="profit-pool" class="text-xl md:text-2xl font-bold text-gray-900 font-mono">$0.00</div>
-                <div id="invested-info" class="text-[9px] md:text-[10px] text-gray-400 mt-1">系统就绪</div>
+                <div id="profit-pool" class="text-xl md:text-2xl font-bold text-gray-900 font-numeric">$0.00</div>
+                <div id="invested-info" class="text-[9px] md:text-[10px] text-label-light mt-1">系统就绪</div>
             </div>
         </div>
 
@@ -427,8 +528,8 @@
                         <span class="text-[10px] uppercase font-bold text-gray-400">实时更新中</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-50/30 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        <table class="w-full text-left text-sm apple-table">
+                            <thead class="bg-gray-50/30 text-[10px] font-bold text-label uppercase tracking-wider">
                                 <tr>
                                     <th class="px-6 py-4">代码</th>
                                     <th class="px-6 py-4 text-xs font-normal">合约ID</th>
@@ -449,9 +550,9 @@
                         <h2 class="font-bold text-sm text-gray-800">账户综合资产报告</h2>
                     </div>
                     <div class="overflow-x-auto custom-scroll" style="max-height: 400px;">
-                        <table class="w-full text-left text-sm">
+                        <table class="w-full text-left text-sm apple-table">
                             <thead
-                                class="bg-gray-50/30 text-[10px] font-bold text-gray-400 uppercase sticky top-0 backdrop-blur-md">
+                                class="bg-gray-50/30 text-[10px] font-bold text-label uppercase tracking-wider sticky top-0 backdrop-blur-md">
                                 <tr>
                                     <th class="px-6 py-4">资产名</th>
                                     <th class="px-6 py-4">类型</th>
@@ -469,84 +570,84 @@
 
             <div class="lg:col-span-4 space-y-8">
                 <section class="apple-card p-6 space-y-6">
-                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4">策略入场与转仓设置</h3>
+                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4 text-gray-900">策略入场与转仓设置</h3>
                     <form id="buy-form" class="space-y-5">
                         <div class="grid grid-cols-2 gap-4">
-                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">入场跌幅
+                            <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">入场跌幅
                                     %</label><input name="entry_drop_pct" type="number" step="0.1"
-                                    class="apple-input w-full"></div>
-                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">ROLL 跌幅
+                                    class="apple-input w-full font-numeric"></div>
+                            <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">ROLL 跌幅
                                     %</label><input name="roll_drop_pct" type="number" step="0.1"
-                                    class="apple-input w-full"></div>
+                                    class="apple-input w-full font-numeric"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">目标
+                            <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">目标
                                     Delta</label><input name="target_delta" type="number" step="0.01"
-                                    class="apple-input w-full"></div>
-                            <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">Delta
+                                    class="apple-input w-full font-numeric"></div>
+                            <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">Delta
                                     容错</label><input name="delta_tolerance" type="number" step="0.01"
-                                    class="apple-input w-full"></div>
+                                    class="apple-input w-full font-numeric"></div>
                         </div>
-                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最大点差 %
+                        <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">最大点差 %
                                 (流动性)</label><input name="max_option_spread" type="number" step="1"
-                                class="apple-input w-full"></div>
+                                class="apple-input w-full font-numeric"></div>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label
-                                    class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最小到期天数</label><input
-                                    name="min_expiry_days" type="number" class="apple-input w-full"></div>
+                                    class="text-[10px] font-bold text-label uppercase block mb-1.5">最小到期天数</label><input
+                                    name="min_expiry_days" type="number" class="apple-input w-full font-numeric"></div>
                             <div><label
-                                    class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">最大持仓笔数</label><input
-                                    name="max_positions" type="number" class="apple-input w-full"></div>
+                                    class="text-[10px] font-bold text-label uppercase block mb-1.5">最大持仓笔数</label><input
+                                    name="max_positions" type="number" class="apple-input w-full font-numeric"></div>
                         </div>
                         <div><label
-                                class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">单次下单数量</label><input
-                                name="order_quantity" type="number" class="apple-input w-full"></div>
-                        <button id="save-buy-btn" class="apple-btn w-full py-3">保存策略设置</button>
+                                class="text-[10px] font-bold text-label uppercase block mb-1.5">单次下单数量</label><input
+                                name="order_quantity" type="number" class="apple-input w-full font-numeric"></div>
+                        <button id="save-buy-btn" class="apple-btn w-full py-3">同步配置协议</button>
                     </form>
                 </section>
 
                 <section class="apple-card p-6 space-y-6">
-                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4">止盈与风险管理设置</h3>
+                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4 text-gray-900">止盈与风险管理设置</h3>
                     <form id="sell-form" class="space-y-4">
                         <div><label
-                                class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">强制平仓天数</label><input
-                                name="time_exit_days" type="number" class="apple-input w-full"></div>
-                        <button id="save-sell-btn" class="apple-btn w-full bg-red-500">更新设置</button>
+                                class="text-[10px] font-bold text-label uppercase block mb-1.5">强制平仓天数</label><input
+                                name="time_exit_days" type="number" class="apple-input w-full font-numeric"></div>
+                        <button id="save-sell-btn" class="apple-btn w-full apple-btn-danger">更新设置</button>
                     </form>
                     <div class="pt-4 border-t border-gray-100">
                         <div class="flex justify-between items-center mb-4">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase">分段止盈策略</span>
+                            <span class="text-[10px] font-bold text-label uppercase">分段止盈策略</span>
                             <button onclick="addTierRow()" class="text-blue-600 text-[10px] font-bold">+ 添加分段</button>
                         </div>
                         <table class="w-full text-xs">
                             <tbody id="tiers-body"></tbody>
                         </table>
                         <button id="save-tiers-btn" onclick="saveExitTiers()"
-                            class="apple-btn w-full mt-4 bg-green-600">应用分段策略</button>
+                            class="apple-btn w-full mt-4 apple-btn-success">应用分段策略</button>
                     </div>
                 </section>
 
                 <section class="apple-card p-6 space-y-4">
-                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4">利润再投资设置</h3>
+                    <h3 class="font-bold text-sm border-b border-gray-100 pb-4 text-gray-900">利润再投资设置</h3>
                     <form id="profit-form" class="space-y-4">
-                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">自动再投资
+                        <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">自动再投资
                                 QQQM</label>
                             <select name="auto_invest_qqqm" class="apple-input w-full appearance-none bg-white">
                                 <option value="0">已禁用</option>
                                 <option value="1">已开启</option>
                             </select>
                         </div>
-                        <div><label class="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">再投资金额阈值
+                        <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">再投资金额阈值
                                 ($)</label><input name="auto_invest_min_threshold" type="number"
-                                class="apple-input w-full shadow-inner"></div>
-                        <button id="save-profit-btn" class="apple-btn w-full bg-purple-600">保存投资参数</button>
+                                class="apple-input w-full shadow-inner font-numeric"></div>
+                        <button id="save-profit-btn" class="apple-btn w-full apple-btn-secondary" style="background: var(--apple-purple); color: white;">保存投资参数</button>
                     </form>
                 </section>
 
                 <section class="apple-card p-6">
-                    <h3 class="font-bold text-sm text-gray-400 uppercase tracking-widest mb-6">系统运行日志</h3>
+                    <h3 class="font-bold text-sm text-label uppercase tracking-widest mb-6">系统运行日志</h3>
                     <div id="alerts-container" class="max-h-[300px] overflow-y-auto custom-scroll pr-2">
-                        <div class="text-gray-300 italic text-center text-xs py-4">正在建立通讯链接...</div>
+                        <div class="text-label-light italic text-center text-xs py-4">正在建立通讯链接...</div>
                     </div>
                 </section>
             </div>
