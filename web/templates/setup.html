@@ -233,6 +233,47 @@
             h1 {
                 font-size: 24px;
             }
+
+            .info-card {
+                padding: 16px;
+            }
+        }
+
+        /* --- Extra Small Screens (< 360px) --- */
+        @media (max-width: 360px) {
+            .apple-card {
+                padding: 24px 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .apple-btn {
+                padding: 14px;
+                font-size: 15px;
+            }
+
+            .info-card {
+                padding: 12px;
+            }
+
+            .info-card p {
+                font-size: 11px;
+            }
+        }
+
+        /* --- Touch Device Optimization --- */
+        @media (hover: none) and (pointer: coarse) {
+            .apple-input {
+                padding: 14px 18px;
+                font-size: 16px;
+            }
+
+            .apple-btn {
+                padding: 16px;
+                min-height: 48px;
+            }
         }
 
         /* --- Selection --- */

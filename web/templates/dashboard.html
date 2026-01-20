@@ -76,7 +76,7 @@
             background: rgba(0, 0, 0, 0.02);
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
-            padding: 10px 14px;
+            padding: 10px 12px;
             font-size: 14px;
             color: var(--apple-text);
             outline: none;
@@ -159,11 +159,58 @@
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
         }
 
+        /* --- Mobile Touch Optimizations --- */
+        @media (hover: none) and (pointer: coarse) {
+            /* 放大所有可交互元素的触控区域 */
+            button, .apple-btn, select {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            /* 移动端分段删除按钮优化 */
+            .tier-row button {
+                padding: 8px 16px;
+                font-size: 13px;
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.2);
+            }
+
+            /* 表格行触控优化 */
+            #tiers-body tr {
+                cursor: pointer;
+            }
+
+            /* 表单元素触控优化 */
+            input, select {
+                padding: 12px 14px;
+                font-size: 16px;
+            }
+        }
+
+        /* --- Focus States for Accessibility --- */
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid var(--apple-blue);
+            outline-offset: 2px;
+        }
+
         /* --- Semantic Colors --- */
-        .text-positive { color: var(--apple-green); }
-        .text-negative { color: var(--apple-red); }
-        .text-label { color: var(--apple-text-secondary); }
-        .text-label-light { color: var(--apple-text-tertiary); }
+        .text-positive {
+            color: var(--apple-green);
+        }
+
+        .text-negative {
+            color: var(--apple-red);
+        }
+
+        .text-label {
+            color: var(--apple-text-secondary);
+        }
+
+        .text-label-light {
+            color: var(--apple-text-tertiary);
+        }
 
         /* --- Scrollbar --- */
         .custom-scroll::-webkit-scrollbar {
@@ -187,11 +234,13 @@
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
+            appearance: none;
             margin: 0;
         }
 
         input[type=number] {
             -moz-appearance: textfield;
+            appearance: textfield;
         }
 
         /* --- Selection --- */
@@ -199,17 +248,302 @@
             background: rgba(0, 113, 227, 0.2);
         }
 
-        /* --- Table Enhancements --- */
-        .apple-table th {
-            font-weight: 600;
-            color: var(--apple-text-secondary);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        /* --- Tablet Overrides (中等屏幕优化) --- */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .stats-grid > div {
+                margin-bottom: 8px;
+            }
+
+            .lg\:col-span-4 {
+                grid-column: span 6;
+            }
         }
 
-        .apple-table td {
-            font-variant-numeric: tabular-nums;
+        /* --- Mobile Overrides (深度优化) --- */
+        @media (max-width: 768px) {
+            html {
+                /* iOS Safari 防止缩放和滚动问题 */
+                -webkit-text-size-adjust: 100%;
+                overflow-x: hidden;
+            }
+
+            body {
+                padding-bottom: 40px;
+                min-width: 0;
+                overflow-x: hidden;
+                /* iOS Safari viewport fix */
+                width: 100%;
+            }
+
+            .apple-card {
+                padding: 16px !important;
+                border-radius: 12px;
+                margin-bottom: 4px;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .grid {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+            .stats-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 10px !important;
+            }
+
+            .stats-grid > div:last-child {
+                grid-column: span 2;
+            }
+
+            h1 {
+                font-size: 1rem !important;
+            }
+
+            .stats-val {
+                font-size: 1rem !important;
+                font-weight: 700;
+                /* 关键：防止数字溢出 */
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            /* 关键修复：将分段策略表格在手机端转换为块状布局，防止挤压 */
+            #tiers-body tr {
+                display: flex;
+                flex-direction: column;
+                padding: 12px 0;
+                border-bottom: 2px solid var(--apple-bg);
+            }
+
+            #tiers-body td {
+                display: block;
+                width: 100% !important;
+                padding: 4px 0 !important;
+                text-align: left !important;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .tier-input-group {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .apple-input {
+                width: 100% !important;
+                /* 让表单输入框占满宽度 */
+                max-width: none !important;
+                min-width: 0;
+            }
+
+            .tier-row .apple-input {
+                width: 45% !important;
+                /* 分段天数各占近一半 */
+            }
+
+            .tier-pnl-group .apple-input {
+                width: 80% !important;
+            }
+
+            /* 表格容器溢出处理 - 关键修复 */
+            .overflow-x-auto {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                min-width: 100%;
+                /* 添加滚动提示 */
+                background-image: linear-gradient(90deg, transparent 95%, rgba(0,0,0,0.02));
+                background-size: 100% 100%;
+                background-repeat: no-repeat;
+            }
+
+            .overflow-x-auto table {
+                min-width: 600px;
+                /* 确保表格不压缩 */
+            }
+
+            .overflow-x-auto td,
+            .overflow-x-auto th {
+                white-space: nowrap;
+                min-width: 80px;
+                max-width: 150px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                padding: 12px 8px !important;
+            }
+
+            /* 表格滚动条美化 */
+            .overflow-x-auto::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .overflow-x-auto::-webkit-scrollbar-thumb {
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 10px;
+            }
+
+            .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+                background: rgba(0, 0, 0, 0.3);
+            }
+
+            /* 统计卡片数字溢出保护 */
+            .apple-card .font-numeric {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                display: block;
+                max-width: 100%;
+            }
+
+            /* 导航栏优化 */
+            nav.apple-glass {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+
+            /* 按钮触控区域优化 */
+            .apple-btn {
+                min-height: 44px;
+                min-width: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* 容器宽度限制 */
+            .container {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+
+            /* 表单元素优化 */
+            .space-y-5 > * + * {
+                margin-top: 12px !important;
+            }
+
+            .space-y-4 > * + * {
+                margin-top: 12px !important;
+            }
+
+            .space-y-6 > * + * {
+                margin-top: 16px !important;
+            }
+
+            /* 侧边栏/右侧区域优化 */
+            .lg\\:col-span-4 {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .lg\\:col-span-4 > section {
+                margin-bottom: 0;
+            }
+
+            /* 标签优化 */
+            label {
+                display: block;
+                width: 100%;
+            }
+
+            /* 下拉选择框优化 */
+            select.apple-input {
+                appearance: none;
+                -webkit-appearance: none;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 12px center;
+                padding-right: 36px;
+            }
+
+            /* 警报日志区域优化 */
+            #alerts-container {
+                max-height: 200px !important;
+            }
+
+            /* iOS Safari 输入框焦点修复 */
+            input[type="number"]:focus,
+            input[type="text"]:focus,
+            select:focus {
+                font-size: 16px !important;
+                /* 防止iOS自动缩放 */
+            }
+
+            /* 触摸设备按钮优化 */
+            @media (hover: none) and (pointer: coarse) {
+                .apple-btn {
+                    min-height: 48px;
+                    min-width: 48px;
+                }
+            }
+        }
+
+        /* 更小屏幕的额外优化 */
+        @media (max-width: 380px) {
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .stats-grid > div:last-child {
+                grid-column: span 1;
+            }
+
+            .stats-val {
+                font-size: 0.9rem !important;
+            }
+
+            .apple-card {
+                padding: 12px !important;
+            }
+        }
+        }
+
+        /* 修复表格横向滚动提示 */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- 横向滚动提示（视觉提示用户可以滚动）--- */
+        .scroll-hint {
+            position: relative;
+        }
+
+        .scroll-hint::after {
+            content: '← 滑动查看更多 →';
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeInOut 3s ease-in-out;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .scroll-hint::after {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            20%, 80% { opacity: 1; }
         }
     </style>
     <script>
@@ -220,15 +554,17 @@
                 const data = await res.json();
                 const connDot = document.getElementById('conn-dot');
                 const connText = document.getElementById('conn-text');
-                if (data.connected) {
-                    connDot.style.backgroundColor = 'var(--apple-green)';
-                    connText.innerText = '终端网络在线';
-                    connText.style.color = 'var(--apple-green)';
-                } else {
-                    connDot.style.backgroundColor = 'var(--apple-red)';
-                    connText.innerText = '终端网络断开';
-                    connText.style.color = 'var(--apple-red)';
-                }
+                const connDotMobile = document.getElementById('conn-dot-mobile');
+                const connTextMobile = document.getElementById('conn-text-mobile');
+
+                const statusColor = data.connected ? 'var(--apple-green)' : 'var(--apple-red)';
+                const statusText = data.connected ? '终端网络在线' : '终端网络断开';
+
+                if (connDot) connDot.style.backgroundColor = statusColor;
+                if (connText) { connText.innerText = statusText; connText.style.color = statusColor; }
+                if (connDotMobile) connDotMobile.style.backgroundColor = statusColor;
+                if (connTextMobile) { connTextMobile.innerText = statusText; connTextMobile.style.color = statusColor; }
+
                 const tbody = document.getElementById('pos-body');
                 tbody.innerHTML = '';
                 if (!data.positions || data.positions.length === 0) {
@@ -275,9 +611,12 @@
                 }
                 if (data.portfolio && data.portfolio.summary) {
                     const sum = data.portfolio.summary;
-                    document.getElementById('net-liq').innerText = '$' + sum.NetLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                    document.getElementById('cash-balance').innerText = '$' + sum.TotalCashValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                    document.getElementById('buying-power').innerText = '$' + sum.BuyingPower.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    const netLiqE = document.getElementById('net-liq');
+                    const cashE = document.getElementById('cash-balance');
+                    const bpE = document.getElementById('buying-power');
+                    if (netLiqE) netLiqE.innerText = '$' + sum.NetLiquidity.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    if (cashE) cashE.innerText = '$' + sum.TotalCashValue.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                    if (bpE) bpE.innerText = '$' + sum.BuyingPower.toLocaleString(undefined, { minimumFractionDigits: 2 });
                 }
                 const pbody = document.getElementById('portfolio-body');
                 if (pbody && data.portfolio && data.portfolio.holdings) {
@@ -321,22 +660,28 @@
                 const tr = document.createElement('tr');
                 tr.className = "tier-row border-b border-gray-50";
                 tr.innerHTML = `
-                    <td class="p-3">
-                        <div class="flex items-center space-x-2">
-                            <input type="number" class="tier-min apple-input w-20 text-center px-1 font-numeric" value="${tier.days_min}">
-                            <span class="text-gray-300">-</span>
-                            <input type="number" class="tier-max apple-input w-20 text-center px-1 font-numeric" 
-                                   value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
+                    <td class="py-2">
+                        <div class="flex items-center tier-input-group">
+                            <span class="text-[10px] sm:hidden font-bold text-label mr-2">持有天数:</span>
+                            <div class="flex items-center space-x-1 flex-1">
+                                <input type="number" class="tier-min apple-input text-center px-1 font-numeric" value="${tier.days_min}">
+                                <span class="text-gray-300">-</span>
+                                <input type="number" class="tier-max apple-input text-center px-1 font-numeric"
+                                       value="${isLast ? currentMaxHoldDays : tier.days_max}" ${isLast ? 'disabled' : ''}>
+                            </div>
                         </div>
                     </td>
-                    <td class="p-3">
-                        <div class="flex items-center space-x-1">
-                            <input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-positive font-numeric" value="${(tier.target_pnl * 100).toFixed(0)}">
-                            <span class="text-[10px] text-label-light font-bold">%</span>
+                    <td class="py-2">
+                        <div class="flex items-center tier-pnl-group">
+                            <span class="text-[10px] sm:hidden font-bold text-label mr-2">目标盈亏:</span>
+                            <div class="flex items-center space-x-1 flex-1">
+                                <input type="number" class="tier-pnl apple-input text-center px-1 font-bold text-positive font-numeric" value="${(tier.target_pnl * 100).toFixed(0)}">
+                                <span class="text-[10px] text-label-light font-bold">%</span>
+                            </div>
                         </div>
                     </td>
-                    <td class="p-3 text-right">
-                        <button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">×</button>
+                    <td class="py-2 text-right">
+                        <button onclick="removeTierRow(this)" class="bg-red-50 text-red-500 rounded-lg px-4 py-1.5 text-xs font-bold sm:bg-transparent sm:p-0 sm:text-lg">删除分段</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -355,9 +700,25 @@
             const tr = document.createElement('tr');
             tr.className = "tier-row border-b border-gray-50";
             tr.innerHTML = `
-                <td class="p-3"><div class="flex items-center space-x-2"><input type="number" class="tier-min apple-input w-20 text-center px-1 font-numeric" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input w-20 text-center px-1 font-numeric" value="${currentMaxHoldDays}" disabled></div></td>
-                <td class="p-3"><div class="flex items-center space-x-1"><input type="number" class="tier-pnl apple-input w-20 text-center px-1 font-bold text-positive font-numeric" value="10"><span class="text-[10px] text-label-light font-bold">%</span></div></td>
-                <td class="p-3 text-right"><button onclick="removeTierRow(this)" class="text-red-400 hover:text-red-600 transition-colors text-lg">×</button></td>
+                <td class="py-2">
+                    <div class="flex items-center tier-input-group">
+                        <span class="text-[10px] sm:hidden font-bold text-label mr-2">持有天数:</span>
+                        <div class="flex items-center space-x-1 flex-1">
+                            <input type="number" class="tier-min apple-input text-center px-1 font-numeric" value="${lastMax + 1}"><span class="text-gray-300">-</span><input type="number" class="tier-max apple-input text-center px-1 font-numeric" value="${currentMaxHoldDays}" disabled>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-2">
+                    <div class="flex items-center tier-pnl-group">
+                        <span class="text-[10px] sm:hidden font-bold text-label mr-2">目标盈亏:</span>
+                        <div class="flex items-center space-x-1 flex-1">
+                            <input type="number" class="tier-pnl apple-input text-center px-1 font-bold text-positive font-numeric" value="10"><span class="text-[10px] text-label-light font-bold">%</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-2 text-right">
+                    <button onclick="removeTierRow(this)" class="bg-red-50 text-red-500 rounded-lg px-4 py-1.5 text-xs font-bold sm:bg-transparent sm:p-0 sm:text-lg">删除分段</button>
+                </td>
             `;
             tbody.appendChild(tr);
             updateExitTiersDisplay();
@@ -471,73 +832,86 @@
                 updateExitTiersDisplay();
             });
             setInterval(() => {
-                document.getElementById('sys-time').innerText = new Date().toTimeString().split(' ')[0];
+                const now = new Date().toTimeString().split(' ')[0];
+                const sysTime = document.getElementById('sys-time');
+                const sysTimeMobile = document.getElementById('sys-time-mobile');
+                if (sysTime) sysTime.innerText = now;
+                if (sysTimeMobile) sysTimeMobile.innerText = now;
             }, 1000);
         };
     </script>
 </head>
 
 <body class="pb-20">
-    <nav
-        class="apple-glass sticky top-0 z-50 px-4 md:px-6 py-4 flex flex-wrap justify-between items-center shadow-sm gap-4">
-        <div class="flex items-center space-x-3 md:space-x-6">
-            <h1 class="text-base md:text-lg font-bold tracking-tight text-gray-900">QQQ LEAPS <span
-                    class="text-blue-600">管理后台</span></h1>
-            <div class="flex items-center space-x-2 bg-gray-100 rounded-full px-2 md:px-3 py-1">
+    <nav class="apple-glass sticky top-0 z-50 px-4 md:px-6 py-3 flex justify-between items-center shadow-sm">
+        <div class="flex items-center space-x-3">
+            <h1 class="text-base md:text-lg font-bold tracking-tight text-gray-900 leading-tight">QQQ LEAPS <br
+                    class="xs:hidden"> <span class="text-blue-600">管理后台</span></h1>
+            <div class="hidden sm:flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
                 <span id="conn-dot" class="status-dot bg-gray-300"></span>
-                <span id="conn-text" class="text-[9px] md:text-[10px] font-semibold text-gray-500 uppercase">检测中</span>
+                <span id="conn-text" class="text-[10px] font-semibold text-gray-500 uppercase">检测中</span>
             </div>
         </div>
-        <div class="flex items-center space-x-4 md:space-x-6 text-[11px] md:text-[12px] text-label">
-            <div class="hidden xs:block">系统时间: <span id="sys-time" class="font-medium text-gray-600 font-numeric">00:00:00</span>
+        <div class="flex items-center space-x-3 md:space-x-6">
+            <div class="hidden md:block text-[12px] text-label">
+                系统时间: <span id="sys-time" class="font-medium text-gray-600 font-numeric">00:00:00</span>
             </div>
             <form action="/logout" method="POST" class="m-0">
                 <button
-                    class="bg-white border border-gray-200 px-3 md:px-4 py-1.5 rounded-full hover:bg-gray-50 transition-colors font-medium text-gray-600 shadow-sm">退出</button>
+                    class="bg-white border border-gray-200 px-3 md:px-5 py-1.5 rounded-full hover:bg-gray-50 transition-colors font-medium text-[12px] text-gray-600 shadow-sm">退出</button>
             </form>
         </div>
     </nav>
+    <div class="sm:hidden bg-white/50 border-b border-gray-100 px-4 py-2 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <span id="conn-dot-mobile" class="status-dot bg-gray-300 w-2 h-2"></span>
+            <span id="conn-text-mobile" class="text-[10px] font-semibold text-gray-500 uppercase">检测中</span>
+        </div>
+        <div class="text-[10px] text-label">
+            <span id="sys-time-mobile" class="font-numeric">00:00:00</span>
+        </div>
+    </div>
 
     <main class="container mx-auto px-4 md:px-6 mt-6 md:mt-10 space-y-6 md:space-y-8">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div class="apple-card p-4 md:p-6">
-                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">资产净值</div>
-                <div id="net-liq" class="text-xl md:text-2xl font-bold text-gray-900 font-numeric">$0.00</div>
+        <div class="stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="apple-card p-4">
+                <div class="text-[10px] font-bold text-label-light uppercase tracking-wider mb-1">资产净值</div>
+                <div id="net-liq" class="stats-val text-xl font-bold text-gray-900 font-numeric">$0.00</div>
             </div>
-            <div class="apple-card p-4 md:p-6">
-                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">可用现金</div>
-                <div id="cash-balance" class="text-xl md:text-2xl font-bold text-positive font-numeric">$0.00</div>
+            <div class="apple-card p-4">
+                <div class="text-[10px] font-bold text-label-light uppercase tracking-wider mb-1">可用现金</div>
+                <div id="cash-balance" class="stats-val text-xl font-bold text-positive font-numeric">$0.00</div>
             </div>
-            <div class="apple-card p-4 md:p-6">
-                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">当前购买力</div>
-                <div id="buying-power" class="text-xl md:text-2xl font-bold text-orange-500 font-numeric">$0.00</div>
+            <div class="apple-card p-4">
+                <div class="text-[10px] font-bold text-label-light uppercase tracking-wider mb-1">当前购买力</div>
+                <div id="buying-power" class="stats-val text-xl font-bold text-orange-500 font-numeric">$0.00</div>
             </div>
-            <div class="apple-card p-4 md:p-6 border-l-4 border-purple-400 col-span-2 lg:col-span-1">
-                <div class="text-[10px] md:text-[11px] font-bold text-label uppercase tracking-wide mb-1">已实现利润 (再投资)
-                </div>
-                <div id="profit-pool" class="text-xl md:text-2xl font-bold text-gray-900 font-numeric">$0.00</div>
-                <div id="invested-info" class="text-[9px] md:text-[10px] text-label-light mt-1">系统就绪</div>
+            <div class="apple-card p-4 border-l-4 border-purple-400">
+                <div class="text-[10px] font-bold text-label-light uppercase tracking-wider mb-1">已实现利润 (再投资)</div>
+                <div id="profit-pool" class="stats-val text-xl font-bold text-gray-900 font-numeric">$0.00</div>
+                <div id="invested-info" class="text-[10px] text-label-light mt-1">系统就绪</div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-8 space-y-8">
                 <section class="apple-card overflow-hidden">
-                    <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
+                    <div
+                        class="px-4 md:px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
                         <h2 class="font-bold text-sm text-gray-800">LEAPS 期权核心持仓</h2>
                         <span class="text-[10px] uppercase font-bold text-gray-400">实时更新中</span>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto scroll-hint">
                         <table class="w-full text-left text-sm apple-table">
                             <thead class="bg-gray-50/30 text-[10px] font-bold text-label uppercase tracking-wider">
                                 <tr>
-                                    <th class="px-6 py-4">代码</th>
-                                    <th class="px-6 py-4 text-xs font-normal">合约ID</th>
-                                    <th class="px-6 py-4">买入日期</th>
-                                    <th class="px-6 py-4">开仓价</th>
-                                    <th class="px-6 py-4">数量</th>
-                                    <th class="px-6 py-4">未结盈亏</th>
-                                    <th class="px-6 py-4 text-right">状态</th>
+                                    <th class="px-4 md:px-6 py-4">代码</th>
+                                    <th class="px-4 md:px-6 py-4 text-xs font-normal">合约ID</th>
+                                    <th class="px-4 md:px-6 py-4">买入日期</th>
+                                    <th class="px-4 md:px-6 py-4">开仓价</th>
+                                    <th class="px-4 md:px-6 py-4">数量</th>
+                                    <th class="px-4 md:px-6 py-4">未结盈亏</th>
+                                    <th class="px-4 md:px-6 py-4 text-right">状态</th>
                                 </tr>
                             </thead>
                             <tbody id="pos-body"></tbody>
@@ -546,20 +920,20 @@
                 </section>
 
                 <section class="apple-card overflow-hidden">
-                    <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
+                    <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-b border-gray-100">
                         <h2 class="font-bold text-sm text-gray-800">账户综合资产报告</h2>
                     </div>
-                    <div class="overflow-x-auto custom-scroll" style="max-height: 400px;">
+                    <div class="overflow-x-auto custom-scroll scroll-hint" style="max-height: 400px;">
                         <table class="w-full text-left text-sm apple-table">
                             <thead
                                 class="bg-gray-50/30 text-[10px] font-bold text-label uppercase tracking-wider sticky top-0 backdrop-blur-md">
                                 <tr>
-                                    <th class="px-6 py-4">资产名</th>
-                                    <th class="px-6 py-4">类型</th>
-                                    <th class="px-6 py-4">持仓量</th>
-                                    <th class="px-6 py-4">市价</th>
-                                    <th class="px-6 py-4">盈亏</th>
-                                    <th class="px-6 py-4 text-right">总市值</th>
+                                    <th class="px-4 md:px-6 py-4">资产名</th>
+                                    <th class="px-4 md:px-6 py-4">类型</th>
+                                    <th class="px-4 md:px-6 py-4">持仓量</th>
+                                    <th class="px-4 md:px-6 py-4">市价</th>
+                                    <th class="px-4 md:px-6 py-4">盈亏</th>
+                                    <th class="px-4 md:px-6 py-4 text-right">总市值</th>
                                 </tr>
                             </thead>
                             <tbody id="portfolio-body"></tbody>
@@ -569,7 +943,7 @@
             </div>
 
             <div class="lg:col-span-4 space-y-8">
-                <section class="apple-card p-6 space-y-6">
+                <section class="apple-card p-4 md:p-6 space-y-6">
                     <h3 class="font-bold text-sm border-b border-gray-100 pb-4 text-gray-900">策略入场与转仓设置</h3>
                     <form id="buy-form" class="space-y-5">
                         <div class="grid grid-cols-2 gap-4">
@@ -599,18 +973,16 @@
                                     class="text-[10px] font-bold text-label uppercase block mb-1.5">最大持仓笔数</label><input
                                     name="max_positions" type="number" class="apple-input w-full font-numeric"></div>
                         </div>
-                        <div><label
-                                class="text-[10px] font-bold text-label uppercase block mb-1.5">单次下单数量</label><input
+                        <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">单次下单数量</label><input
                                 name="order_quantity" type="number" class="apple-input w-full font-numeric"></div>
                         <button id="save-buy-btn" class="apple-btn w-full py-3">同步配置协议</button>
                     </form>
                 </section>
 
-                <section class="apple-card p-6 space-y-6">
+                <section class="apple-card p-4 md:p-6 space-y-6">
                     <h3 class="font-bold text-sm border-b border-gray-100 pb-4 text-gray-900">止盈与风险管理设置</h3>
                     <form id="sell-form" class="space-y-4">
-                        <div><label
-                                class="text-[10px] font-bold text-label uppercase block mb-1.5">强制平仓天数</label><input
+                        <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">强制平仓天数</label><input
                                 name="time_exit_days" type="number" class="apple-input w-full font-numeric"></div>
                         <button id="save-sell-btn" class="apple-btn w-full apple-btn-danger">更新设置</button>
                     </form>
@@ -627,7 +999,7 @@
                     </div>
                 </section>
 
-                <section class="apple-card p-6 space-y-4">
+                <section class="apple-card p-4 md:p-6 space-y-4">
                     <h3 class="font-bold text-sm border-b border-gray-100 pb-4 text-gray-900">利润再投资设置</h3>
                     <form id="profit-form" class="space-y-4">
                         <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">自动再投资
@@ -640,11 +1012,12 @@
                         <div><label class="text-[10px] font-bold text-label uppercase block mb-1.5">再投资金额阈值
                                 ($)</label><input name="auto_invest_min_threshold" type="number"
                                 class="apple-input w-full shadow-inner font-numeric"></div>
-                        <button id="save-profit-btn" class="apple-btn w-full apple-btn-secondary" style="background: var(--apple-purple); color: white;">保存投资参数</button>
+                        <button id="save-profit-btn" class="apple-btn w-full apple-btn-secondary"
+                            style="background: var(--apple-purple); color: white;">保存投资参数</button>
                     </form>
                 </section>
 
-                <section class="apple-card p-6">
+                <section class="apple-card p-4 md:p-6">
                     <h3 class="font-bold text-sm text-label uppercase tracking-widest mb-6">系统运行日志</h3>
                     <div id="alerts-container" class="max-h-[300px] overflow-y-auto custom-scroll pr-2">
                         <div class="text-label-light italic text-center text-xs py-4">正在建立通讯链接...</div>

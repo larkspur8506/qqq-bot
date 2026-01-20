@@ -196,6 +196,35 @@
             }
         }
 
+        /* --- Extra Small Screens (< 360px) --- */
+        @media (max-width: 360px) {
+            .apple-card {
+                padding: 24px 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .apple-btn {
+                padding: 12px;
+                font-size: 15px;
+            }
+        }
+
+        /* --- Touch Device Optimization --- */
+        @media (hover: none) and (pointer: coarse) {
+            .apple-input {
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+
+            .apple-btn {
+                padding: 15px;
+                min-height: 48px;
+            }
+        }
+
         /* --- Selection --- */
         ::selection {
             background: rgba(0, 113, 227, 0.2);
