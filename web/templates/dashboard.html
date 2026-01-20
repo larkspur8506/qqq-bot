@@ -187,6 +187,38 @@
             }
         }
 
+        /* --- PC端表格优化 --- */
+        @media (min-width: 769px) {
+            .tier-row td {
+                padding: 8px 4px !important;
+                vertical-align: middle;
+            }
+
+            .tier-row .tier-input-group {
+                min-width: 180px;
+                max-width: 200px;
+            }
+
+            .tier-row .tier-pnl-group {
+                min-width: 120px;
+                max-width: 140px;
+            }
+
+            .tier-row input {
+                max-width: 70px;
+                min-width: 50px;
+            }
+
+            .tier-row .tier-max,
+            .tier-row .tier-min {
+                width: 55px !important;
+            }
+
+            .tier-row .tier-pnl {
+                width: 65px !important;
+            }
+        }
+
         /* --- Focus States for Accessibility --- */
         button:focus-visible,
         input:focus-visible,
@@ -246,6 +278,28 @@
         /* --- Selection --- */
         ::selection {
             background: rgba(0, 113, 227, 0.2);
+        }
+
+        /* --- 分段止盈表格容器优化 --- */
+        #tiers-body {
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .tier-row {
+            width: 100%;
+        }
+
+        .tier-row td {
+            padding: 6px 4px;
+            vertical-align: middle;
+        }
+
+        .tier-input-group,
+        .tier-pnl-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* --- Tablet Overrides (中等屏幕优化) --- */
@@ -991,9 +1045,11 @@
                             <span class="text-[10px] font-bold text-label uppercase">分段止盈策略</span>
                             <button onclick="addTierRow()" class="text-blue-600 text-[10px] font-bold">+ 添加分段</button>
                         </div>
-                        <table class="w-full text-xs">
-                            <tbody id="tiers-body"></tbody>
-                        </table>
+                        <div class="overflow-x-auto custom-scroll">
+                            <table class="w-full text-xs min-w-[300px]">
+                                <tbody id="tiers-body"></tbody>
+                            </table>
+                        </div>
                         <button id="save-tiers-btn" onclick="saveExitTiers()"
                             class="apple-btn w-full mt-4 apple-btn-success">应用分段策略</button>
                     </div>
