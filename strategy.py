@@ -430,20 +430,15 @@ class Strategy:
 
     async def find_leaps(self):
         """
-        Industrial Scanning for LEAPS:
-        1. All-strike Scan (No hardcoded anchors).
-        2. Greeks Retry Mechanism.
-        3. Mandatory Spread/Liquidity Filter (3%).
-        4. Delta Precision Filter (0.05).
+        优化后的 LEAPS 扫描器：支持 Greeks 缺失时的行权价估算容错
         """
-        self.ib.reqMarketDataType(4) # Frozen/Delayed is fine for scanning
+        self.ib.reqMarketDataType(4)
         
         target_delta = self.settings['target_delta']
         tolerance = self.settings['delta_tolerance']
         max_spread = self.settings['max_option_spread']
         min_expiry = self.settings['min_expiry_days']
 
-        # Get Option Chain
         chains = await self.ib.reqSecDefOptParamsAsync(self.qqq_contract.symbol, '', self.qqq_contract.secType, self.qqq_contract.conId)
         smart_chains = [c for c in chains if c.exchange == 'SMART']
         if not smart_chains: 
@@ -451,7 +446,6 @@ class Strategy:
             return None
         chain = smart_chains[0]
 
-        # Filter Expirations
         now = datetime.now()
         valid_exp = [e for e in chain.expirations if (datetime.strptime(e, '%Y%m%d') - now).days >= min_expiry]
         if not valid_exp:
@@ -460,81 +454,60 @@ class Strategy:
         
         target_exp = sorted(valid_exp)[0]
         
-        # Get All Strikes around ATM (100% price)
         ticker = self.ib.reqMktData(self.qqq_contract, '', True, False)
         await asyncio.sleep(1)
         ref_price = ticker.last if ticker.last > 0 else (ticker.close if ticker.close > 0 else self.prev_close)
         
-        # Select 30 strikes around ATM to find Delta anywhere from 0.2 to 0.8
+        fallback_strike = ref_price * 0.9 
+        
         all_strikes = sorted(chain.strikes)
         closest_idx = min(range(len(all_strikes)), key=lambda i: abs(all_strikes[i] - ref_price))
-        search_strikes = all_strikes[max(0, closest_idx-15) : min(len(all_strikes), closest_idx+15)]
+        search_strikes = all_strikes[max(0, closest_idx-30) : min(len(all_strikes), closest_idx+30)]
         
-        candidates = []
-        for strike in search_strikes:
-            c = Contract(symbol=config.SYMBOL, secType='OPT', lastTradeDateOrContractMonth=target_exp, strike=strike, right='C', exchange='SMART')
-            candidates.append(c)
-        
+        candidates = [Contract(symbol=config.SYMBOL, secType='OPT', lastTradeDateOrContractMonth=target_exp, 
+                               strike=s, right='C', exchange='SMART') for s in search_strikes]
         qualified = await self.ib.qualifyContractsAsync(*candidates)
         
-        # Request Data with Retries for Greeks
-        tickers = []
-        for c in qualified:
-            # 13: model greeks, 101: open interest
-            tickers.append(self.ib.reqMktData(c, '13,101', True, False))
+        tickers = [self.ib.reqMktData(c, '13,101', True, False) for c in qualified]
         
         best_contract = None
-        min_delta_diff = 999
-        max_oi = -1
+        min_score = 999
 
-        # Retry Loop for Greeks (3 times, 1s interval)
         for attempt in range(3):
             await asyncio.sleep(1.5)
-            logger.info(f"[Scanner] Greek Data Attempt {attempt+1}/3...")
+            logger.info(f"[Scanner] Greek Data Attempt {attempt+1}/3... (Ref: ${ref_price:.2f})")
             
             for t in tickers:
-                # 1. Delta Check
-                delta = None
-                if t.modelGreeks and t.modelGreeks.delta:
-                    delta = t.modelGreeks.delta
-                
-                if delta is None: continue
-                
-                diff = abs(delta - target_delta)
-                if diff > tolerance: continue
-                
-                # 2. Spread Check (Liquidity Guard)
                 mid = (t.bid + t.ask) / 2 if (t.bid > 0 and t.ask > 0) else 0
                 if mid <= 0: continue
                 
                 spread_pct = (t.ask - t.bid) / mid
                 if spread_pct > max_spread:
-                    # Log once for awareness
-                    if attempt == 0:
-                        logger.debug(f"Skipping {t.contract.localSymbol}: Spread {spread_pct:.2%} > {max_spread:.2%}")
                     continue
-                
-                # 3. Selection (Tie-break by Open Interest)
-                oi = t.openInterest or 0
-                if diff < min_delta_diff:
-                    min_delta_diff = diff
-                    best_contract = t.contract
-                    max_oi = oi
-                elif abs(diff - min_delta_diff) < 0.001: # Same delta diff, pick higher liquidity
-                    if oi > max_oi:
-                        best_contract = t.contract
-                        max_oi = oi
-            
-            if best_contract: break # Found one
 
-        # Final Decision
+                delta = t.modelGreeks.delta if t.modelGreeks and t.modelGreeks.delta else None
+                
+                if delta is not None:
+                    diff = abs(delta - target_delta)
+                    if diff <= tolerance and diff < min_score:
+                        min_score = diff
+                        best_contract = t.contract
+                else:
+                    strike_diff_pct = abs(t.contract.strike - fallback_strike) / fallback_strike
+                    if strike_diff_pct < 0.05 and strike_diff_pct < min_score:
+                        min_score = strike_diff_pct
+                        best_contract = t.contract
+                        logger.info(f"[Scanner] Candidate (fallback): {t.contract.localSymbol} Strike: {t.contract.strike}")
+
+            if best_contract: break
+
         if not best_contract:
             msg = f"Target Delta {target_delta} (±{tolerance}) unavailable. Safety/Liquidity Guard triggered."
             logger.warning(f"[Scanner] {msg}")
             await self.db.add_alert('WARN', msg)
             return None
             
-        logger.info(f"[Scanner] SELECTED: {best_contract.localSymbol} (Diff: {min_delta_diff:.4f}, OI: {max_oi})")
+        logger.info(f"[Scanner] SELECTED: {best_contract.localSymbol} (Score: {min_score:.4f})")
         return best_contract
 
     async def record_realized_profit(self, contract_id, entry_price, exit_price, quantity, fills):
