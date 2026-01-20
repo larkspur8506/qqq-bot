@@ -430,85 +430,72 @@ class Strategy:
 
     async def find_leaps(self):
         """
-        优化后的 LEAPS 扫描器：支持 Greeks 缺失时的行权价估算容错
+        优化后的 LEAPS 扫描器：
+        1. 自动计算 300天+ 后的目标年份。
+        2. 锚定每年 12 月和 6 月的第三个周五（LEAPS 标准过期日）。
+        3. 即使没有 Delta 数据，也通过行权价比例(Moneyness)强制入场。
         """
         self.ib.reqMarketDataType(4)
         
-        target_delta = self.settings['target_delta']
-        tolerance = self.settings['delta_tolerance']
-        max_spread = self.settings['max_option_spread']
-        min_expiry = self.settings['min_expiry_days']
+        target_delta = self.settings.get('target_delta', 0.6)
+        min_expiry = self.settings.get('min_expiry_days', 365)
+        max_spread = self.settings.get('max_option_spread', 0.1)
 
-        chains = await self.ib.reqSecDefOptParamsAsync(self.qqq_contract.symbol, '', self.qqq_contract.secType, self.qqq_contract.conId)
-        smart_chains = [c for c in chains if c.exchange == 'SMART']
-        if not smart_chains: 
-            await self.db.add_alert('ERROR', "No SMART option chain found for QQQ")
-            return None
-        chain = smart_chains[0]
-
-        now = datetime.now()
-        valid_exp = [e for e in chain.expirations if (datetime.strptime(e, '%Y%m%d') - now).days >= min_expiry]
-        if not valid_exp:
-            await self.db.add_alert('WARN', f"No expirations found > {min_expiry} days.")
-            return None
-        
-        target_exp = sorted(valid_exp)[0]
-        
         ticker = self.ib.reqMktData(self.qqq_contract, '', True, False)
-        await asyncio.sleep(1)
+        await asyncio.sleep(1.5)
         ref_price = ticker.last if ticker.last > 0 else (ticker.close if ticker.close > 0 else self.prev_close)
         
-        fallback_strike = ref_price * 0.9 
+        target_dt = datetime.now() + timedelta(days=min_expiry)
+        target_year = target_dt.year
         
-        all_strikes = sorted(chain.strikes)
-        closest_idx = min(range(len(all_strikes)), key=lambda i: abs(all_strikes[i] - ref_price))
-        search_strikes = all_strikes[max(0, closest_idx-30) : min(len(all_strikes), closest_idx+30)]
-        
-        candidates = [Contract(symbol=config.SYMBOL, secType='OPT', lastTradeDateOrContractMonth=target_exp, 
-                               strike=s, right='C', exchange='SMART') for s in search_strikes]
-        qualified = await self.ib.qualifyContractsAsync(*candidates)
-        
-        tickers = [self.ib.reqMktData(c, '13,101', True, False) for c in qualified]
-        
-        best_contract = None
-        min_score = 999
+        potential_dates = [
+            f"{target_year}1218", f"{target_year}1219", f"{target_year}1220",
+            f"{target_year}0619", f"{target_year}0620",
+            f"{target_year+1}1217", f"{target_year+1}1218"
+        ]
 
-        for attempt in range(3):
-            await asyncio.sleep(1.5)
-            logger.info(f"[Scanner] Greek Data Attempt {attempt+1}/3... (Ref: ${ref_price:.2f})")
+        target_strike = round(ref_price * 0.90 / 5) * 5
+        
+        logger.info(f"[Scanner] Target: ${ref_price:.2f}, Strike ~{target_strike}, Year {target_year}")
+
+        for exp_date in potential_dates:
+            strikes = [target_strike, target_strike - 5, target_strike + 5]
+            candidates = [
+                Option(config.SYMBOL, exp_date, s, 'C', 'SMART') for s in strikes
+            ]
             
-            for t in tickers:
-                mid = (t.bid + t.ask) / 2 if (t.bid > 0 and t.ask > 0) else 0
-                if mid <= 0: continue
-                
-                spread_pct = (t.ask - t.bid) / mid
-                if spread_pct > max_spread:
-                    continue
-
-                delta = t.modelGreeks.delta if t.modelGreeks and t.modelGreeks.delta else None
-                
-                if delta is not None:
-                    diff = abs(delta - target_delta)
-                    if diff <= tolerance and diff < min_score:
-                        min_score = diff
-                        best_contract = t.contract
-                else:
-                    strike_diff_pct = abs(t.contract.strike - fallback_strike) / fallback_strike
-                    if strike_diff_pct < 0.05 and strike_diff_pct < min_score:
-                        min_score = strike_diff_pct
-                        best_contract = t.contract
-                        logger.info(f"[Scanner] Candidate (fallback): {t.contract.localSymbol} Strike: {t.contract.strike}")
-
-            if best_contract: break
-
-        if not best_contract:
-            msg = f"Target Delta {target_delta} (±{tolerance}) unavailable. Safety/Liquidity Guard triggered."
-            logger.warning(f"[Scanner] {msg}")
-            await self.db.add_alert('WARN', msg)
-            return None
+            qualified = await self.ib.qualifyContractsAsync(*candidates)
             
-        logger.info(f"[Scanner] SELECTED: {best_contract.localSymbol} (Score: {min_score:.4f})")
-        return best_contract
+            if qualified:
+                logger.info(f"[Scanner] Found valid expiry: {exp_date}, {len(qualified)} contracts")
+                
+                tickers = [self.ib.reqMktData(c, '101', False, False) for c in qualified]
+                await asyncio.sleep(3)
+                
+                for t in tickers:
+                    mid = (t.bid + t.ask) / 2 if (t.bid > 0 and t.ask > 0) else t.last
+                    if not mid or mid <= 0: continue
+                    
+                    spread_pct = (t.ask - t.bid) / mid
+                    if spread_pct > max_spread: 
+                        logger.info(f"[Scanner] {t.contract.localSymbol} spread {spread_pct:.2%} > limit")
+                        continue
+
+                    delta = t.modelGreeks.delta if (t.modelGreeks and t.modelGreeks.delta) else None
+                    
+                    if delta:
+                        diff = abs(abs(delta) - target_delta)
+                        if diff < 0.15:
+                            logger.info(f"[Scanner] Selected (Delta): {t.contract.localSymbol} Delta={delta:.3f}")
+                            return t.contract
+                    else:
+                        moneyness = t.contract.strike / ref_price
+                        if 0.85 <= moneyness <= 0.93:
+                            logger.info(f"[Scanner] Selected (Fallback): {t.contract.localSymbol} Moneyness={moneyness:.2%}")
+                            return t.contract
+        
+        logger.warning("[Scanner] No valid LEAPS found. Check min_expiry_days or market data.")
+        return None
 
     async def record_realized_profit(self, contract_id, entry_price, exit_price, quantity, fills):
         """
