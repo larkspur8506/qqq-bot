@@ -278,24 +278,24 @@ class Strategy:
         mid, _ = await execution.get_mid_price(self.ib, contract)
         
         if mid:
-            trade = await execution.place_limit_order(self.ib, contract, 'SELL', quantity, mid)
+            trade = await execution.place_limit_order(self.ib, contract, 'SELL', quantity, mid, self.settings['max_option_spread'])
             if trade and trade.orderStatus.status == 'Filled':
-                 now = datetime.now(config.TIMEZONE)
-                 await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'ROLL_EXIT')
-                 logger.info(f"[ROLL] SELL SUCCESS for {contract.localSymbol}")
-                 
-                 # Record Profit
-                 await self.record_realized_profit(contract_id, float(oldest_pos['entry_price']), trade.orderStatus.avgFillPrice, quantity, trade.fills)
-                 
-                 # 2. Buy Replacement
-                 # We trigger a normal entry search which will pick current best LEAP (lower strike now)
-                 # Force=True to bypass one-trade-per-day check, and pass the original quantity
-                 await self.process_entry_signal(force=True, quantity=quantity)
-                 
-                 # Check for QQQM Auto-Invest
-                 await self.check_and_invest_profits()
+                now = datetime.now(config.TIMEZONE)
+                await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'ROLL_EXIT')
+                logger.info(f"[ROLL] SELL SUCCESS for {contract.localSymbol}")
+
+                # Record Profit (auto-invest handled in manage_positions on TP)
+                await self.record_realized_profit(contract_id, float(oldest_pos['entry_price']), trade.orderStatus.avgFillPrice, quantity, trade.fills)
+
+                # 2. Buy Replacement
+                # We trigger a normal entry search which will pick current best LEAP (lower strike now)
+                # Force=True to bypass one-trade-per-day check, and pass the original quantity
+                await self.process_entry_signal(force=True, quantity=quantity)
+
+                # Note: ROLL does not trigger QQQM auto-invest (no profit realized)
+                # QQQM auto-invest is only triggered on TP/TimeLimit exits in manage_positions()
             else:
-                 logger.warning("[ROLL] Sell order failed to fill. Aborting roll.")
+                  logger.warning("[ROLL] Sell order failed to fill. Aborting roll.")
         else:
             logger.warning("[ROLL] Could not get price for sell order.")
 
@@ -360,18 +360,18 @@ class Strategy:
             # CHECK 1: Take Profit (Dynamic)
             if pnl_pct >= target_pnl:
                 logger.info(f"[Exit] Stepped TP Triggered for {contract.localSymbol}: {pnl_pct:.2%} >= {target_pnl:.2%} (Held {days_held}d)")
-                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price)
+                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price, self.settings['max_option_spread'])
                 if trade and trade.orderStatus.status == 'Filled':
                      await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, f'TP_Tier_{days_held}d')
                      await self.record_realized_profit(contract_id, entry_price, trade.orderStatus.avgFillPrice, int(pos['quantity']), trade.fills)
                      await self.check_and_invest_profits()
-                return 
+                return
 
             # CHECK 2: Time Exit (Shield - Force Exit)
             time_exit_days = self.settings['time_exit_days']
             if days_held >= time_exit_days:
                 logger.warning(f"[Exit] TIME LIMIT Triggered for {contract.localSymbol}: {days_held} days >= {time_exit_days}")
-                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price)
+                trade = await execution.place_limit_order(self.ib, contract, 'SELL', int(pos['quantity']), mid_price, self.settings['max_option_spread'])
                 if trade and trade.orderStatus.status == 'Filled':
                      await self.db.close_trade(contract_id, now, trade.orderStatus.avgFillPrice, 'TimeLimit')
                      await self.record_realized_profit(contract_id, entry_price, trade.orderStatus.avgFillPrice, int(pos['quantity']), trade.fills)
@@ -412,7 +412,7 @@ class Strategy:
         # Get price for limit
         mid, _ = await execution.get_mid_price(self.ib, contract)
         if mid:
-            trade = await execution.place_limit_order(self.ib, contract, 'BUY', quantity, mid)
+            trade = await execution.place_limit_order(self.ib, contract, 'BUY', quantity, mid, self.settings['max_option_spread'])
             if trade:
                  if trade.orderStatus.status == 'Filled':
                      now = datetime.now(config.TIMEZONE)
@@ -424,7 +424,7 @@ class Strategy:
                         'quantity': quantity
                      })
                      logger.info(f"[Entry] SUCCESS. Saved to DB.")
-                 else:
+            else:
                      logger.warning("[Entry] Order not filled.")
 
 
@@ -558,48 +558,125 @@ class Strategy:
 
     async def check_and_invest_profits(self):
         """
-        Automatically invests accumulated profits into QQQM stock.
+        Automatically invests realized LEAPS profits into CORE_SYMBOL (QQQM) stock.
+
+        Trigger Conditions:
+        1. Total realized profit > min_threshold
+        2. Available profit (total - threshold - already_invested) >= 1 share price
+
+        Strategy:
+        1. Smart pricing: Ask - 1 Tick limit with mid-price floor
+        2. MarketOrder fallback if limit order fails/times out
         """
         enabled = await self.db.get_setting('auto_invest_qqqm', 0)
         if not int(enabled):
             return
 
-        total_profit = await self.db.get_setting('leaps_realized_profit', 0.0)
-        invested = await self.db.get_setting('qqqm_invested_capital', 0.0)
-        min_threshold = await self.db.get_setting('auto_invest_min_threshold', 500.0)
+        # Check for today's attempt to prevent repeated failures if nothing has changed
+        today_str = datetime.now(config.TIMEZONE).date().isoformat()
+        last_attempt = await self.db.get_setting('qqqm_invest_last_attempt', '')
         
-        available = float(total_profit) - float(invested)
-        
-        if available < float(min_threshold):
-            logger.info(f"[AutoInvest] Available profit ${available:.2f} is below threshold ${min_threshold:.2f}")
+        total_profit = float(await self.db.get_setting('leaps_realized_profit', 0.0))
+        invested = float(await self.db.get_setting('qqqm_invested_capital', 0.0))
+        min_threshold = float(await self.db.get_setting('auto_invest_min_threshold', 500.0))
+
+        if last_attempt == today_str:
+            # Check if profit has increased since last attempt. If not, skip.
+            # We add a small buffer for precision
+            last_profit_at_attempt = float(await self.db.get_setting('qqqm_invest_last_profit', 0.0))
+            if total_profit <= last_profit_at_attempt + 0.01:
+                logger.info("[AutoInvest] Already attempted today with current profit. Skipping.")
+                return
+
+        # Check if total profit exceeds threshold
+        if total_profit <= min_threshold:
+            logger.info(f"[AutoInvest] Total profit ${total_profit:.2f} <= threshold ${min_threshold:.2f}. Skipping.")
             return
 
-        # 1. Qualify QQQM
-        qqqm = Stock('QQQM', 'SMART', 'USD')
+        # Calculate available profit for investment (Respecting the reserved amount)
+        available = total_profit - min_threshold - invested
+        if available <= 0:
+            logger.info(f"[AutoInvest] All available profit above threshold ${min_threshold:.2f} is already invested.")
+            return
+
+        # 1. Qualify CORE_SYMBOL
+        symbol = config.CORE_SYMBOL
+        qqqm = Stock(symbol, 'SMART', 'USD')
         await self.ib.qualifyContractsAsync(qqqm)
-        
-        # 2. Get Price
-        price, _ = await execution.get_mid_price(self.ib, qqqm)
-        if not price or price <= 0:
-            logger.warning("[AutoInvest] Could not get price for QQQM")
+        if not qqqm.conId:
+            logger.warning(f"[AutoInvest] Could not qualify {symbol} contract")
             return
 
-        # 3. Calculate Quantity
-        shares = int(available // price)
+        # 2. Get Robust Market Data
+        mid, ticker = await execution.get_mid_price(self.ib, qqqm)
+        if mid is None or ticker.ask <= 0:
+            logger.warning(f"[AutoInvest] Could not get valid price for {symbol}")
+            return
+
+        ask = ticker.ask
+        bid = ticker.bid
+
+        # Check if available profit can buy at least 1 share
+        if available < ask:
+            logger.info(f"[AutoInvest] Available ${available:.2f} < 1 share price ${ask:.2f}. Skipping.")
+            await self.db.set_setting('qqqm_invest_last_attempt', today_str)
+            await self.db.set_setting('qqqm_invest_last_profit', str(total_profit))
+            return
+
+        # 3. Smart pricing: Ask - 1 tick, protected by mid price floor
+        limit_price = ask - 0.01
+        min_acceptable = mid * 0.995 
+        limit_price = max(limit_price, min_acceptable)
+
+        # 4. Calculate Quantity
+        shares = int(available // limit_price)
         if shares <= 0:
-            logger.info(f"[AutoInvest] Not enough profit (${available:.2f}) for 1 share of QQQM (${price:.2f})")
             return
 
-        # 4. Execute Buy
-        logger.info(f"[AutoInvest] Investing ${available:.2f} into {shares} shares of QQQM @ ${price:.2f}")
-        trade = await execution.place_limit_order(self.ib, qqqm, 'BUY', shares, price)
-        
+        logger.info(f"[AutoInvest] Profit=${total_profit:.2f} Threshold=${min_threshold:.2f} Invested=${invested:.2f} Available=${available:.2f}")
+        logger.info(f"[AutoInvest] {symbol} Bid={bid:.2f} Ask={ask:.2f} Limit={limit_price:.2f} Qty={shares}")
+
+        # 5. Execute with limit order
+        trade = await execution.place_limit_order(self.ib, qqqm, 'BUY', shares, limit_price, 0.01)
+
+        # 6. Check result and fallback
+        filled_qty = 0
+        fill_price = 0.0
+
         if trade and trade.orderStatus.status == 'Filled':
-            actual_cost = trade.orderStatus.avgFillPrice * shares
-            # We don't subtract commissions from 'invested' bucket, we just track capital deployed
-            new_invested = float(invested) + actual_cost
+            filled_qty = trade.orderStatus.filled
+            fill_price = trade.orderStatus.avgFillPrice
+        else:
+            # If not filled or timed out (canceled by place_limit_order)
+            logger.info(f"[AutoInvest] Limit order not filled (Status: {trade.orderStatus.status if trade else 'None'}). Trying MarketOrder...")
+            
+            # Ensure cancelled
+            if trade and not trade.isDone():
+                self.ib.cancelOrder(trade.order)
+                await asyncio.sleep(1)
+
+            market_order = MarketOrder('BUY', shares)
+            m_trade = self.ib.placeOrder(qqqm, market_order)
+            
+            # Wait for fill
+            start_t = asyncio.get_event_loop().time()
+            while not m_trade.isDone() and (asyncio.get_event_loop().time() - start_t) < 15:
+                await asyncio.sleep(1)
+            
+            if m_trade.orderStatus.status == 'Filled':
+                filled_qty = m_trade.orderStatus.filled
+                fill_price = m_trade.orderStatus.avgFillPrice
+                logger.info(f"[AutoInvest] MarketOrder filled {filled_qty} @ ${fill_price:.2f}")
+            else:
+                logger.warning(f"[AutoInvest] MarketOrder failed: {m_trade.orderStatus.status}")
+
+        if filled_qty > 0:
+            cost = fill_price * filled_qty
+            new_invested = invested + cost
             await self.db.set_setting('qqqm_invested_capital', str(new_invested))
             self.settings['qqqm_invested_capital'] = new_invested
-            logger.info(f"[AutoInvest] SUCCESS: {shares} QQQM bought. Total Invested: ${new_invested:.2f}")
-        else:
-            logger.warning("[AutoInvest] Buy order failed or cancelled.")
+            logger.info(f"[AutoInvest] SUCCESS: Invested ${cost:.2f}. Total invested: ${new_invested:.2f}")
+        
+        # Mark attempt to avoid spamming next cycle (unless profit changes)
+        await self.db.set_setting('qqqm_invest_last_attempt', today_str)
+        await self.db.set_setting('qqqm_invest_last_profit', str(total_profit))

@@ -40,23 +40,25 @@ async def get_mid_price(ib: IB, contract: Contract):
     mid_price = (bid + ask) / 2.0
     return mid_price, ticker
 
-async def place_limit_order(ib: IB, contract: Contract, action: str, quantity: int, limit_price: float):
+async def place_limit_order(ib: IB, contract: Contract, action: str, quantity: int, limit_price: float, max_spread: float | None = None):
     """
     Places a Limit Order with safety checks and timeout.
-    
+
     Args:
         ib: Active IB connection.
         contract: The contract to trade.
         action: 'BUY' or 'SELL'.
         quantity: Number of contracts.
         limit_price: limit price.
-        
+        max_spread: Optional max spread ratio (e.g., 0.03 for 3%).
+                    If None, uses default 0.05 for stocks or configurable value for options.
+
     Returns:
         trade (Trade): The trade object if successful (filled or submitted), None if aborted.
     """
     # 1. Re-validate Market Data (Spread Check)
     mid, ticker = await get_mid_price(ib, contract)
-    
+
     if mid is None:
         logger.error(f"[Execution] Aborted {action}: Could not get valid Price.")
         return None
@@ -65,14 +67,17 @@ async def place_limit_order(ib: IB, contract: Contract, action: str, quantity: i
     ask = ticker.ask
     spread = ask - bid
     spread_ratio = spread / mid
-    
+
     # SAFETY CHECK: Wide Spread
-    if spread_ratio > config.MAX_SPREAD_RATIO:
-        logger.warning(f"[Execution] SPREAD PROTECTION: Spread {spread:.2f} ({spread_ratio:.2%}) > Max {config.MAX_SPREAD_RATIO:.2%}. Aborting.")
+    # Use provided max_spread, or default 5% if not specified (e.g., for stocks)
+    effective_max_spread = max_spread if max_spread is not None else 0.05
+    if spread_ratio > effective_max_spread:
+        logger.warning(f"[Execution] SPREAD PROTECTION: Spread {spread:.2f} ({spread_ratio:.2%}) > Max {effective_max_spread:.2%}. Aborting.")
         return None
 
     # SAFETY CHECK: Size Protection (Premium Cap)
-    total_premium = limit_price * 100 * quantity
+    multiplier = 100 if contract.secType == 'OPT' else 1
+    total_premium = limit_price * multiplier * quantity
     if action == 'BUY' and total_premium > config.MAX_PREMIUM:
         logger.warning(f"[Execution] SIZE PROTECTION: Premium ${total_premium:.2f} > Limit ${config.MAX_PREMIUM}. Aborting.")
         return None

@@ -40,7 +40,6 @@ TP_TIERS = [
 TIME_EXIT_DAYS = 270        # Sell if held >= 270 days (Force Exit)
 
 # --- Execution Safety ---
-MAX_SPREAD_RATIO = 0.01     # (Ask - Bid) / Mid <= 1%
 MAX_PREMIUM = 12000.0       # Max $ per contract
 ORDER_TIMEOUT = 30          # Seconds to wait for order fill before check
 
