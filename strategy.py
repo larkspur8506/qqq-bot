@@ -1,5 +1,6 @@
 
 import asyncio
+import math
 from datetime import datetime, timedelta
 import logging
 from ib_insync import *
@@ -430,10 +431,10 @@ class Strategy:
 
     async def find_leaps(self):
         """
-        优化后的 LEAPS 扫描器：
+        优化后的 LEAPS 扫描器（带历史数据保底报价）：
         1. 自动计算 300天+ 后的目标年份。
-        2. 锚定每年 12 月和 6 月的第三个周五（LEAPS 标准过期日）。
-        3. 即使没有 Delta 数据，也通过行权价比例(Moneyness)强制入场。
+        2. 锚定每年 12 月和 6 月的标准过期日。
+        3. 即使没有实时报价，也通过请求历史数据获取保底价，防止下单出现 nan。
         """
         self.ib.reqMarketDataType(4)
         
@@ -455,17 +456,13 @@ class Strategy:
         ]
 
         target_strike = round(ref_price * 0.90 / 5) * 5
-        
         logger.info(f"[Scanner] Target: ${ref_price:.2f}, Strike ~{target_strike}, Year {target_year}")
 
         for exp_date in potential_dates:
             strikes = [target_strike, target_strike - 5, target_strike + 5]
-            candidates = [
-                Option(config.SYMBOL, exp_date, s, 'C', 'SMART') for s in strikes
-            ]
+            candidates = [Option(config.SYMBOL, exp_date, s, 'C', 'SMART') for s in strikes]
             
             qualified = await self.ib.qualifyContractsAsync(*candidates)
-            
             if qualified:
                 logger.info(f"[Scanner] Found valid expiry: {exp_date}, {len(qualified)} contracts")
                 
@@ -474,15 +471,30 @@ class Strategy:
                 
                 for t in tickers:
                     mid = (t.bid + t.ask) / 2 if (t.bid > 0 and t.ask > 0) else t.last
-                    if not mid or mid <= 0: continue
                     
-                    spread_pct = (t.ask - t.bid) / mid
-                    if spread_pct > max_spread: 
-                        logger.info(f"[Scanner] {t.contract.localSymbol} spread {spread_pct:.2%} > limit")
+                    if mid is None or math.isnan(mid) or mid <= 0:
+                        logger.info(f"[Scanner] {t.contract.localSymbol} no realtime quote, fetching historical fallback...")
+                        try:
+                            bars = await self.ib.reqHistoricalDataAsync(
+                                t.contract, endDateTime='', durationStr='1 D',
+                                barSizeSetting='1 hour', whatToShow='MIDPOINT', useRTH=True
+                            )
+                            if bars:
+                                mid = bars[-1].close
+                                logger.info(f"[Scanner] Historical fallback price: {mid}")
+                        except Exception as e:
+                            logger.error(f"[Scanner] Historical price fetch failed: {e}")
+
+                    if mid is None or math.isnan(mid) or mid <= 0:
                         continue
+                    
+                    if t.bid > 0 and t.ask > 0:
+                        spread_pct = (t.ask - t.bid) / mid
+                        if spread_pct > max_spread: 
+                            logger.info(f"[Scanner] {t.contract.localSymbol} spread {spread_pct:.2%} > limit")
+                            continue
 
                     delta = t.modelGreeks.delta if (t.modelGreeks and t.modelGreeks.delta) else None
-                    
                     if delta:
                         diff = abs(abs(delta) - target_delta)
                         if diff < 0.15:
@@ -491,10 +503,10 @@ class Strategy:
                     else:
                         moneyness = t.contract.strike / ref_price
                         if 0.85 <= moneyness <= 0.93:
-                            logger.info(f"[Scanner] Selected (Fallback): {t.contract.localSymbol} Moneyness={moneyness:.2%}")
+                            logger.info(f"[Scanner] Selected (Moneyness Fallback): {t.contract.localSymbol} Mid=${mid}")
                             return t.contract
         
-        logger.warning("[Scanner] No valid LEAPS found. Check min_expiry_days or market data.")
+        logger.warning("[Scanner] No valid LEAPS found. Check expiry or market data.")
         return None
 
     async def record_realized_profit(self, contract_id, entry_price, exit_price, quantity, fills):
